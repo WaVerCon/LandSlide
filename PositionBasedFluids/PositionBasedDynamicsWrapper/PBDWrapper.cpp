@@ -1,23 +1,17 @@
 #include "PBDWrapper.h"
-#include "GL/glew.h"
-#include "GL/glut.h"
-#include "Common/Common.h"
 #include <iostream>
-#include "Demos/Utils/OBJLoader.h"
-#include "Demos/Utils/Utilities.h"
-#include "Demos/Utils/SceneLoader.h"
-#include "Demos/Utils/TetGenLoader.h"
-#include "Demos/Utils/Utilities.h"
-#include "SPlisHSPlasH/TimeManager.h"
-#include "SPlisHSPlasH/Utilities/Timing.h"
-#include "GL/freeglut_ext.h"
-#include "Demos/Visualization/Shader.h"
-#include "Demos/Simulation/TimeManager.h"
-#include "Demos/Visualization/Visualization.h"
+#include <Demos/Utils/OBJLoader.h>
+#include <Demos/Utils/Utilities.h>
+#include <Demos/Utils/SceneLoader.h>
+#include <Demos/Utils/TetGenLoader.h>
+#include <Demos/Utils/Utilities.h>
+#include "../SPlisHSPlasH/TimeManager.h"
+#include "../SPlisHSPlasH/Utilities/Timing.h"
 
 #define _USE_MATH_DEFINES
 #include "math.h"
 
+#define PBD_DATA_PATH "C:\LandSlide\data"
 
 using namespace Eigen;
 using namespace std;
@@ -32,92 +26,19 @@ PBDWrapper::PBDWrapper()
 	m_clothSimulationMethod = 2;
 	m_solidSimulationMethod = 2;
 	m_bendingMethod = 2;
-	m_sceneName = "";
-	m_sceneFileName = "";
+	m_sceneName = "LandSlideSimulation";
+	m_sceneFileName = "LandSlide";
 	m_enableMayaExport = false;
 	m_dampingCoeff = 0.0;
-	m_drawAABB = false;
-	m_drawStaticBodies = true;
-	m_drawDistanceFields = -1;
-	m_drawBVHDepth = -1;
+
 }
 
 PBDWrapper::~PBDWrapper()
 {
-	delete m_shader;
-	delete PBD::TimeManager::getCurrent();
+	delete SPH::TimeManager::getCurrent();
 }
 
-void PBDWrapper::initGUI()
-{
-	TwAddVarRW(SPH::MiniGL::getTweakBar(), "RenderAABBs", TW_TYPE_BOOLCPP, &m_drawAABB, " label='Render AABBs' group=PBD ");
-	TwAddVarRW(SPH::MiniGL::getTweakBar(), "RenderBVH", TW_TYPE_INT32, &m_drawBVHDepth, " label='Render BVH depth' group=PBD ");
-	TwAddVarRW(SPH::MiniGL::getTweakBar(), "RenderStaticBodies", TW_TYPE_BOOLCPP, &m_drawStaticBodies, " label='Render static bodies' group=PBD ");
-	TwAddVarRW(SPH::MiniGL::getTweakBar(), "RenderDistanceFields", TW_TYPE_INT32, &m_drawDistanceFields, " label='Render distance fields' step=1 group=PBD ");
-	TwAddVarRW(SPH::MiniGL::getTweakBar(), "DampingCoeff", TW_TYPE_REAL, &m_dampingCoeff, " label='Damping' group=PBD ");
-	TwType enumType = TwDefineEnum("VelocityUpdateMethodType", NULL, 0);
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "VelocityUpdateMethod", enumType, setVelocityUpdateMethod, getVelocityUpdateMethod, &m_sim, " label='Velocity update method' enum='0 {First Order Update}, 1 {Second Order Update}' group=PBD");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "MaxIter", TW_TYPE_UINT32, setMaxIterations, getMaxIterations, &m_sim, " label='Max. iterations'  min=1 step=1 group=PBD ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "MaxIterV", TW_TYPE_UINT32, setMaxIterationsV, getMaxIterationsV, &m_sim, " label='Max. iterations Vel.'  min=1 step=1 group=PBD ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "ContactTolerance", TW_TYPE_REAL, setContactTolerance, getContactTolerance, &m_cd, " label='Contact tolerance'  step=0.001 precision=3 group=PBD ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "ContactStiffnessRigidBody", TW_TYPE_REAL, setContactStiffnessRigidBody, getContactStiffnessRigidBody, &m_model, " label='Contact stiffness RB'  min=0.0 step=0.1 precision=2 group=PBD ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "ContactStiffnessParticleRigidBody", TW_TYPE_REAL, setContactStiffnessParticleRigidBody, getContactStiffnessParticleRigidBody, &m_model, " label='Contact stiffness Particle-RB'  min=0.0 step=0.1 precision=2 group=PBD ");
-	TwType enumType2 = TwDefineEnum("ClothSimulationMethodType", NULL, 0);
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "ClothSimulationMethod", enumType2, setClothSimulationMethod, getClothSimulationMethod, this, " label='Cloth sim. method' enum='0 {None}, 1 {Distance constraints}, 2 {FEM based PBD}, 3 {Strain based dynamics}' group=PBD");
-	TwType enumType3 = TwDefineEnum("SolidSimulationMethodType", NULL, 0);
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "SolidSimulationMethod", enumType3, setSolidSimulationMethod, getSolidSimulationMethod, this,
-		" label='Solid sim. method' enum='0 {None}, 1 {Volume constraints}, 2 {FEM based PBD}, 3 {Strain based dynamics (no inversion handling)}, 4 {Shape matching (no inversion handling)}' group=PBD");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "Stiffness", TW_TYPE_REAL, setStiffness, getStiffness, &m_model, " label='Stiffness'  min=0.0 step=0.1 precision=4 group='Distance constraints' ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "XXStiffness", TW_TYPE_REAL, setXXStiffness, getXXStiffness, &m_model, " label='Stiffness XX'  min=0.0 step=0.1 precision=4 group='Strain based dynamics' ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "YYStiffness", TW_TYPE_REAL, setYYStiffness, getYYStiffness, &m_model, " label='Stiffness YY'  min=0.0 step=0.1 precision=4 group='Strain based dynamics' ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "XYStiffness", TW_TYPE_REAL, setXYStiffness, getXYStiffness, &m_model, " label='Stiffness XY'  min=0.0 step=0.1 precision=4 group='Strain based dynamics' ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "XXStiffnessFEM", TW_TYPE_REAL, setXXStiffness, getXXStiffness, &m_model, " label='Youngs modulus XX'  min=0.0 step=0.1 precision=4 group='FEM based PBD' ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "YYStiffnessFEM", TW_TYPE_REAL, setYYStiffness, getYYStiffness, &m_model, " label='Youngs modulus YY'  min=0.0 step=0.1 precision=4 group='FEM based PBD' ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "XYStiffnessFEM", TW_TYPE_REAL, setXYStiffness, getXYStiffness, &m_model, " label='Youngs modulus XY'  min=0.0 step=0.1 precision=4 group='FEM based PBD' ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "XYPoissonRatioFEM", TW_TYPE_REAL, setXYPoissonRatio, getXYPoissonRatio, &m_model, " label='Poisson ratio XY'  min=0.0 step=0.1 precision=4 group='FEM based PBD' ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "YXPoissonRatioFEM", TW_TYPE_REAL, setYXPoissonRatio, getYXPoissonRatio, &m_model, " label='Poisson ratio YX'  min=0.0 step=0.1 precision=4 group='FEM based PBD' ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "NormalizeStretch", TW_TYPE_BOOL32, setNormalizeStretch, getNormalizeStretch, &m_model, " label='Normalize stretch' group='Strain based dynamics' ");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "NormalizeShear", TW_TYPE_BOOL32, setNormalizeShear, getNormalizeShear, &m_model, " label='Normalize shear' group='Strain based dynamics' ");
-	TwType enumType4 = TwDefineEnum("BendingMethodType", NULL, 0);
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "BendingMethod", enumType4, setBendingMethod, getBendingMethod, this, " label='Bending method' enum='0 {None}, 1 {Dihedral angle}, 2 {Isometric bending}' group=Bending");
-	TwAddVarCB(SPH::MiniGL::getTweakBar(), "BendingStiffness", TW_TYPE_REAL, setBendingStiffness, getBendingStiffness, &m_model, " label='Bending stiffness'  min=0.0 step=0.01 precision=4 group=Bending ");
-}
 
-SPH::Shader *PBDWrapper::createShader(const std::string &vertexShader, const std::string &geometryShader, const std::string &fragmentShader)
-{
-	if (SPH::MiniGL::checkOpenGLVersion(3, 3))
-	{
-		SPH::Shader *shader = new SPH::Shader();
-
-		if (vertexShader != "")
-			shader->compileShaderFile(GL_VERTEX_SHADER, vertexShader);
-		if (geometryShader != "")
-			shader->compileShaderFile(GL_GEOMETRY_SHADER, geometryShader);
-		if (fragmentShader != "")
-			shader->compileShaderFile(GL_FRAGMENT_SHADER, fragmentShader);
-		shader->createAndLinkProgram();
-		return shader;
-	}
-	return NULL;
-}
-
-void PBDWrapper::initShader()
-{
-	std::string vertFile = PBD::Utilities::normalizePath(m_dataPath + "/shaders/vs_smooth.glsl");
-	std::string fragFile = PBD::Utilities::normalizePath(m_dataPath + "/shaders/fs_smooth.glsl");
-	m_shader = createShader(vertFile, "", fragFile);
-
-	if (m_shader == NULL)
-		return;
-
-	m_shader->begin();
-	m_shader->addUniform("modelview_matrix");
-	m_shader->addUniform("projection_matrix");
-	m_shader->addUniform("surface_color");
-	m_shader->addUniform("shininess");
-	m_shader->addUniform("specular_factor");
-	m_shader->end();
-}
 
  void PBDWrapper::reset()
  {
@@ -131,7 +52,7 @@ void PBDWrapper::initShader()
  {
 	PBD::ParticleData &pd = m_model.getParticles();
 	PBD::SimulationModel::RigidBodyVector &rb = m_model.getRigidBodies();
-	PBD::TimeManager::getCurrent()->setTimeStepSize(SPH::TimeManager::getCurrent()->getTimeStepSize());
+	SPH::TimeManager::getCurrent()->setTimeStepSize(SPH::TimeManager::getCurrent()->getTimeStepSize());
 
 	m_sim.step(m_model);
 
@@ -162,7 +83,7 @@ void PBDWrapper::updateVisModels()
 	}
 }
 
-void PBDWrapper::readScene(const std::string &sceneFileName)
+void PBDWrapper::readScene(const std::string &sceneFileName, std::vector<std::string> &rigidBodyFileNames)
 {
 	m_sceneFileName = sceneFileName;
 
@@ -221,6 +142,7 @@ void PBDWrapper::readScene(const std::string &sceneFileName)
 			PBD::VertexData vd;
 			PBD::OBJLoader::loadObj(PBD::Utilities::normalizePath(rbd.m_modelFile), vd, mesh);
 			objFiles[rbd.m_modelFile] = { vd, mesh };
+			rigidBodyFileNames.push_back(rbd.m_modelFile);
 		}
 	}
 
@@ -530,306 +452,9 @@ void PBDWrapper::readScene(const std::string &sceneFileName)
 
 void PBDWrapper::initModel (const Real timeStepSize)
 {
-	PBD::TimeManager::getCurrent ()->setTimeStepSize(timeStepSize);
+	SPH::TimeManager::getCurrent ()->setTimeStepSize(timeStepSize);
 
 	m_sim.setCollisionDetection(m_model, &m_cd);
-}
-
-void PBDWrapper::shaderBegin(const float *col)
-{
-	if (m_shader)
-	{
-		m_shader->begin();
-		glUniform1f(m_shader->getUniform("shininess"), 5.0f);
-		glUniform1f(m_shader->getUniform("specular_factor"), 0.2f);
-
-		GLfloat matrix[16];
-		glGetFloatv(GL_MODELVIEW_MATRIX, matrix);
-		glUniformMatrix4fv(m_shader->getUniform("modelview_matrix"), 1, GL_FALSE, matrix);
-		GLfloat pmatrix[16];
-		glGetFloatv(GL_PROJECTION_MATRIX, pmatrix);
-		glUniformMatrix4fv(m_shader->getUniform("projection_matrix"), 1, GL_FALSE, pmatrix);
-		glUniform3fv(m_shader->getUniform("surface_color"), 1, col);
-	}
-}
-
-void PBDWrapper::shaderEnd()
-{
-	if (m_shader)
-		m_shader->end();
-}
-
-void PBDWrapper::renderTriangleModels()
-{
-	const PBD::ParticleData &pd = m_model.getParticles();
-	float surfaceColor[4] = { 0.8f, 0.9f, 0.2f, 1 };
-
-	shaderBegin(surfaceColor);
-
-	for (unsigned int i = 0; i < m_model.getTriangleModels().size(); i++)
-	{
-		// mesh
-		const PBD::IndexedFaceMesh &mesh = m_model.getTriangleModels()[i]->getParticleMesh();
-		const unsigned int offset = m_model.getTriangleModels()[i]->getIndexOffset();
-		drawMesh(pd, mesh, offset, surfaceColor);
-	}
-
-	shaderEnd();
-}
-
-void PBDWrapper::renderTetModels()
-{
-	const PBD::ParticleData &pd = m_model.getParticles();
-	float surfaceColor[4] = { 0.8f, 0.4f, 0.7f, 1 };
-
-	shaderBegin(surfaceColor);
-
-	for (unsigned int i = 0; i < m_model.getTetModels().size(); i++)
-	{
-		const PBD::VertexData &vdVis = m_model.getTetModels()[i]->getVisVertices();
-		if (vdVis.size() > 0)
-		{
-			const PBD::IndexedFaceMesh &visMesh = m_model.getTetModels()[i]->getVisMesh();
-			drawMesh(vdVis, visMesh, 0, surfaceColor);
-		}
-		else
-		{
-			const PBD::IndexedFaceMesh &surfaceMesh = m_model.getTetModels()[i]->getSurfaceMesh();
-			const unsigned int offset = m_model.getTetModels()[i]->getIndexOffset();
-			drawMesh(pd, surfaceMesh, offset, surfaceColor);
-		}
-	}
-
-	shaderEnd();
-}
-
-void PBDWrapper::renderAABB(PBD::AABB &aabb)
-{
-	PBD::Vector3r p1, p2;
-	glBegin(GL_LINES);
-	for (unsigned char i = 0; i < 12; i++)
-	{
-		PBD::AABB::getEdge(aabb, i, p1, p2);
-		glVertex3d(p1[0], p1[1], p1[2]);
-		glVertex3d(p2[0], p2[1], p2[2]);
-	}
-	glEnd();
-}
-
-void PBDWrapper::renderBallJoint(PBD::BallJoint &bj)
-{
-	SPH::MiniGL::drawSphere(bj.m_jointInfo.col(2), 0.15f, jointColor);
-}
-
-void PBDWrapper::renderRigidBodyParticleBallJoint(PBD::RigidBodyParticleBallJoint &bj)
-{
-	SPH::MiniGL::drawSphere(bj.m_jointInfo.col(1), 0.1f, jointColor);
-}
-
-void PBDWrapper::renderBallOnLineJoint(PBD::BallOnLineJoint &bj)
-{
-	SPH::MiniGL::drawSphere(bj.m_jointInfo.col(5), 0.1f, jointColor);
-	SPH::MiniGL::drawCylinder(bj.m_jointInfo.col(5) - bj.m_jointInfo.col(7), bj.m_jointInfo.col(5) + bj.m_jointInfo.col(7), jointColor, 0.05f);
-}
-
-void PBDWrapper::renderHingeJoint(PBD::HingeJoint &hj)
-{
-	SPH::MiniGL::drawSphere(hj.m_jointInfo.col(6) - 0.5*hj.m_jointInfo.col(8), 0.1f, jointColor);
-	SPH::MiniGL::drawSphere(hj.m_jointInfo.col(6) + 0.5*hj.m_jointInfo.col(8), 0.1f, jointColor);
-	SPH::MiniGL::drawCylinder(hj.m_jointInfo.col(6) - 0.5*hj.m_jointInfo.col(8), hj.m_jointInfo.col(6) + 0.5*hj.m_jointInfo.col(8), jointColor, 0.05f);
-}
-
-void PBDWrapper::renderUniversalJoint(PBD::UniversalJoint &uj)
-{
-	SPH::MiniGL::drawSphere(uj.m_jointInfo.col(4) - 0.5*uj.m_jointInfo.col(6), 0.1f, jointColor);
-	SPH::MiniGL::drawSphere(uj.m_jointInfo.col(4) + 0.5*uj.m_jointInfo.col(6), 0.1f, jointColor);
-	SPH::MiniGL::drawSphere(uj.m_jointInfo.col(5) - 0.5*uj.m_jointInfo.col(7), 0.1f, jointColor);
-	SPH::MiniGL::drawSphere(uj.m_jointInfo.col(5) + 0.5*uj.m_jointInfo.col(7), 0.1f, jointColor);
-	SPH::MiniGL::drawCylinder(uj.m_jointInfo.col(4) - 0.5*uj.m_jointInfo.col(6), uj.m_jointInfo.col(4) + 0.5*uj.m_jointInfo.col(6), jointColor, 0.05f);
-	SPH::MiniGL::drawCylinder(uj.m_jointInfo.col(5) - 0.5*uj.m_jointInfo.col(7), uj.m_jointInfo.col(5) + 0.5*uj.m_jointInfo.col(7), jointColor, 0.05f);
-}
-
-void PBDWrapper::renderSliderJoint(PBD::SliderJoint &joint)
-{
-	SPH::MiniGL::drawSphere(joint.m_jointInfo.col(6), 0.1f, jointColor);
-	SPH::MiniGL::drawCylinder(joint.m_jointInfo.col(7) - joint.m_jointInfo.col(8), joint.m_jointInfo.col(7) + joint.m_jointInfo.col(8), jointColor, 0.05f);
-}
-
-void PBDWrapper::renderTargetPositionMotorSliderJoint(PBD::TargetPositionMotorSliderJoint &joint)
-{
-	SPH::MiniGL::drawSphere(joint.m_jointInfo.col(6), 0.1f, jointColor);
-	SPH::MiniGL::drawCylinder(joint.m_jointInfo.col(7) - joint.m_jointInfo.col(8), joint.m_jointInfo.col(7) + joint.m_jointInfo.col(8), jointColor, 0.05f);
-}
-
-void PBDWrapper::renderTargetVelocityMotorSliderJoint(PBD::TargetVelocityMotorSliderJoint &joint)
-{
-	SPH::MiniGL::drawSphere(joint.m_jointInfo.col(6), 0.1f, jointColor);
-	SPH::MiniGL::drawCylinder(joint.m_jointInfo.col(7) - joint.m_jointInfo.col(8), joint.m_jointInfo.col(7) + joint.m_jointInfo.col(8), jointColor, 0.05f);
-}
-
-void PBDWrapper::renderTargetAngleMotorHingeJoint(PBD::TargetAngleMotorHingeJoint &hj)
-{
-	SPH::MiniGL::drawSphere(hj.m_jointInfo.col(6) - 0.5*hj.m_jointInfo.col(8), 0.1f, jointColor);
-	SPH::MiniGL::drawSphere(hj.m_jointInfo.col(6) + 0.5*hj.m_jointInfo.col(8), 0.1f, jointColor);
-	SPH::MiniGL::drawCylinder(hj.m_jointInfo.col(6) - 0.5*hj.m_jointInfo.col(8), hj.m_jointInfo.col(6) + 0.5*hj.m_jointInfo.col(8), jointColor, 0.05f);
-}
-
-void PBDWrapper::renderTargetVelocityMotorHingeJoint(PBD::TargetVelocityMotorHingeJoint &hj)
-{
-	SPH::MiniGL::drawSphere(hj.m_jointInfo.col(6) - 0.5*hj.m_jointInfo.col(8), 0.1f, jointColor);
-	SPH::MiniGL::drawSphere(hj.m_jointInfo.col(6) + 0.5*hj.m_jointInfo.col(8), 0.1f, jointColor);
-	SPH::MiniGL::drawCylinder(hj.m_jointInfo.col(6) - 0.5*hj.m_jointInfo.col(8), hj.m_jointInfo.col(6) + 0.5*hj.m_jointInfo.col(8), jointColor, 0.05f);
-}
-
-void PBDWrapper::renderRigidBodyContact(PBD::RigidBodyContactConstraint &cc)
-{
-	float col1[4] = { 0.0f, 0.6f, 0.2f, 1 };
-	float col2[4] = { 0.6f, 0.0f, 0.2f, 1 };
-	SPH::MiniGL::drawPoint(cc.m_constraintInfo.col(0), 5.0f, col1);
-	SPH::MiniGL::drawPoint(cc.m_constraintInfo.col(1), 5.0f, col2);
-	SPH::MiniGL::drawVector(cc.m_constraintInfo.col(1), cc.m_constraintInfo.col(1) + cc.m_constraintInfo.col(2), 1.0f, col2);
-}
-
-void PBDWrapper::renderParticleRigidBodyContact(PBD::ParticleRigidBodyContactConstraint &cc)
-{
-	float col1[4] = { 0.0f, 0.6f, 0.2f, 1 };
-	float col2[4] = { 0.6f, 0.0f, 0.2f, 1 };
-	SPH::MiniGL::drawPoint(cc.m_constraintInfo.col(0), 5.0f, col1);
-	SPH::MiniGL::drawPoint(cc.m_constraintInfo.col(1), 5.0f, col2);
-	SPH::MiniGL::drawVector(cc.m_constraintInfo.col(1), cc.m_constraintInfo.col(1) + cc.m_constraintInfo.col(2), 1.0f, col2);
-}
-
-void PBDWrapper::renderScene ()
-{
-	// Draw sim model
-	PBD::SimulationModel::RigidBodyVector &rb = m_model.getRigidBodies();
-
-	//float selectionColor[4] = { 0.8f, 0.0f, 0.0f, 1 };
-	float surfaceColor[4] = { 0.3f, 0.5f, 0.8f, 1 };
-	float staticColor[4] = { 0.5f, 0.5f, 0.5f, 0.3f };
-
-	for (size_t i = 0; i < rb.size(); i++)
-	{
-		const PBD::VertexData &vd = rb[i]->getGeometry().getVertexData();
-		const PBD::IndexedFaceMesh &mesh = rb[i]->getGeometry().getMesh();
-		if (rb[i]->getMass() != 0.0)
-		{
-			shaderBegin(surfaceColor);
-			drawMesh(vd, mesh, 0, surfaceColor);
-			shaderEnd();
-		}
-		else if (m_drawStaticBodies)
-		{
-			shaderBegin(staticColor);
-			drawMesh(vd, mesh, 0, staticColor);
-			shaderEnd();
-		}
-	}
-
-	renderTriangleModels();
-	renderTetModels();
-	renderConstraints();
-	renderBVH();
-}
-
-void PBDWrapper::renderConstraints()
-{
-	PBD::SimulationModel::ConstraintVector &constraints = m_model.getConstraints();
-	PBD::SimulationModel::RigidBodyContactConstraintVector &rigidBodyContacts = m_model.getRigidBodyContactConstraints();
-	PBD::SimulationModel::ParticleRigidBodyContactConstraintVector &particleRigidBodyContacts = m_model.getParticleRigidBodyContactConstraints();
-
-	for (unsigned int i = 0; i < rigidBodyContacts.size(); i++)
-		renderRigidBodyContact(rigidBodyContacts[i]);
-	for (unsigned int i = 0; i < particleRigidBodyContacts.size(); i++)
-		renderParticleRigidBodyContact(particleRigidBodyContacts[i]);
-
-	for (size_t i = 0; i < constraints.size(); i++)
-	{
-		if (constraints[i]->getTypeId() == PBD::BallJoint::TYPE_ID)
-		{
-			renderBallJoint(*(PBD::BallJoint*)constraints[i]);
-		}
-		else if (constraints[i]->getTypeId() == PBD::BallOnLineJoint::TYPE_ID)
-		{
-			renderBallOnLineJoint(*(PBD::BallOnLineJoint*)constraints[i]);
-		}
-		else if (constraints[i]->getTypeId() == PBD::HingeJoint::TYPE_ID)
-		{
-			renderHingeJoint(*(PBD::HingeJoint*)constraints[i]);
-		}
-		else if (constraints[i]->getTypeId() == PBD::UniversalJoint::TYPE_ID)
-		{
-			renderUniversalJoint(*(PBD::UniversalJoint*)constraints[i]);
-		}
-		else if (constraints[i]->getTypeId() == PBD::SliderJoint::TYPE_ID)
-		{
-			renderSliderJoint(*(PBD::SliderJoint*)constraints[i]);
-		}
-		else if (constraints[i]->getTypeId() == PBD::TargetAngleMotorHingeJoint::TYPE_ID)
-		{
-			renderTargetAngleMotorHingeJoint(*(PBD::TargetAngleMotorHingeJoint*)constraints[i]);
-		}
-		else if (constraints[i]->getTypeId() == PBD::TargetVelocityMotorHingeJoint::TYPE_ID)
-		{
-			renderTargetVelocityMotorHingeJoint(*(PBD::TargetVelocityMotorHingeJoint*)constraints[i]);
-		}
-		else if (constraints[i]->getTypeId() == PBD::TargetPositionMotorSliderJoint::TYPE_ID)
-		{
-			renderTargetPositionMotorSliderJoint(*(PBD::TargetPositionMotorSliderJoint*)constraints[i]);
-		}
-		else if (constraints[i]->getTypeId() == PBD::TargetVelocityMotorSliderJoint::TYPE_ID)
-		{
-			renderTargetVelocityMotorSliderJoint(*(PBD::TargetVelocityMotorSliderJoint*)constraints[i]);
-		}
-		else if (constraints[i]->getTypeId() == PBD::RigidBodyParticleBallJoint::TYPE_ID)
-		{
-			renderRigidBodyParticleBallJoint(*(PBD::RigidBodyParticleBallJoint*)constraints[i]);
-		}
-	}
-}
-
-void PBDWrapper::renderBVH()
-{
-	if (m_drawAABB || (m_drawBVHDepth >= 0))
-	{
-		float staticColor[4] = { 0.5f, 0.5f, 0.5f, 0.3f };
-
-		PBD::SimulationModel::RigidBodyVector &rb = m_model.getRigidBodies();
-		PBD::ObjectArray<PBD::CollisionDetection::CollisionObject*> &collisionObjects = m_cd.getCollisionObjects();
-		for (unsigned int k = 0; k < collisionObjects.size(); k++)
-		{
-			if (m_drawAABB)
-				renderAABB(collisionObjects[k]->m_aabb);
-
-			if (m_drawBVHDepth >= 0)
-			{
-				if (m_cd.isDistanceFieldCollisionObject(collisionObjects[k]))
-				{
-					const PBD::PointCloudBSH &bvh = ((PBD::DistanceFieldCollisionDetection::DistanceFieldCollisionObject*) collisionObjects[k])->m_bvh;
-
-					std::function<bool(unsigned int, unsigned int)> predicate = [&](unsigned int node_index, unsigned int depth) { return (int)depth <= m_drawBVHDepth; };
-					std::function<void(unsigned int, unsigned int)> cb = [&](unsigned int node_index, unsigned int depth)
-					{
-						if (depth == m_drawBVHDepth)
-						{
-							const PBD::BoundingSphere &bs = bvh.hull(node_index);
-							if (collisionObjects[k]->m_bodyType == PBD::CollisionDetection::CollisionObject::RigidBodyCollisionObjectType)
-							{
-								PBD::RigidBody *body = rb[collisionObjects[k]->m_bodyIndex];
-								const PBD::Vector3r &sphere_x = bs.x();
-								const PBD::Vector3r sphere_x_w = body->getRotation() * sphere_x + body->getPosition();
-								SPH::MiniGL::drawSphere(sphere_x_w, std::max((float)bs.r(), 0.05f), staticColor);
-							}
-							else
-								SPH::MiniGL::drawSphere(bs.x(), std::max((float)bs.r(), 0.05f), staticColor);
-						}
-					};
-
-					bvh.traverse_depth_first(predicate, cb);
-				}
-			}
-		}
-	}
 }
 
 
@@ -1003,205 +628,3 @@ void PBDWrapper::renderBVH()
 		}
 	}
  }
-
-
-void TW_CALL PBDWrapper::setVelocityUpdateMethod(const void *value, void *clientData)
-{
-	const short val = *(const short *)(value);
-	((PBD::TimeStepController*)clientData)->setVelocityUpdateMethod((unsigned int)val);
-}
-
-void TW_CALL PBDWrapper::getVelocityUpdateMethod(void *value, void *clientData)
-{
-	*(short *)(value) = (short)((PBD::TimeStepController*)clientData)->getVelocityUpdateMethod();
-}
-
-void TW_CALL PBDWrapper::setMaxIterations(const void *value, void *clientData)
-{
-	const unsigned int val = *(const unsigned int *)(value);
-	((PBD::TimeStepController*)clientData)->setMaxIterations(val);
-}
-
-void TW_CALL PBDWrapper::getMaxIterations(void *value, void *clientData)
-{
-	*(unsigned int *)(value) = ((PBD::TimeStepController*)clientData)->getMaxIterations();
-}
-
-void TW_CALL PBDWrapper::setMaxIterationsV(const void *value, void *clientData)
-{
-	const unsigned int val = *(const unsigned int *)(value);
-	((PBD::TimeStepController*)clientData)->setMaxIterationsV(val);
-}
-
-void TW_CALL PBDWrapper::getMaxIterationsV(void *value, void *clientData)
-{
-	*(unsigned int *)(value) = ((PBD::TimeStepController*)clientData)->getMaxIterationsV();
-}
-
-void TW_CALL PBDWrapper::setContactTolerance(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((PBD::DistanceFieldCollisionDetection*)clientData)->setTolerance(val);
-}
-
-void TW_CALL PBDWrapper::getContactTolerance(void *value, void *clientData)
-{
-	*(Real *)(value) = ((PBD::DistanceFieldCollisionDetection*)clientData)->getTolerance();
-}
-
-void TW_CALL PBDWrapper::setContactStiffnessRigidBody(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((PBD::SimulationModel*)clientData)->setContactStiffnessRigidBody(val);
-}
-
-void TW_CALL PBDWrapper::getContactStiffnessRigidBody(void *value, void *clientData)
-{
-	*(Real *)(value) = ((PBD::SimulationModel*)clientData)->getContactStiffnessRigidBody();
-}
-
-void TW_CALL PBDWrapper::setContactStiffnessParticleRigidBody(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((PBD::SimulationModel*)clientData)->setContactStiffnessParticleRigidBody(val);
-}
-
-void TW_CALL PBDWrapper::getContactStiffnessParticleRigidBody(void *value, void *clientData)
-{
-	*(Real *)(value) = ((PBD::SimulationModel*)clientData)->getContactStiffnessParticleRigidBody();
-}
-
-void TW_CALL PBDWrapper::setStiffness(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((PBD::SimulationModel*)clientData)->setClothStiffness(val);
-}
-
-void TW_CALL PBDWrapper::getStiffness(void *value, void *clientData)
-{
-	*(Real *)(value) = ((PBD::SimulationModel*)clientData)->getClothStiffness();
-}
-
-void TW_CALL PBDWrapper::setXXStiffness(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((PBD::SimulationModel*)clientData)->setClothXXStiffness(val);
-}
-
-void TW_CALL PBDWrapper::getXXStiffness(void *value, void *clientData)
-{
-	*(Real *)(value) = ((PBD::SimulationModel*)clientData)->getClothXXStiffness();
-}
-
-void TW_CALL PBDWrapper::setYYStiffness(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((PBD::SimulationModel*)clientData)->setClothYYStiffness(val);
-}
-
-void TW_CALL PBDWrapper::getYYStiffness(void *value, void *clientData)
-{
-	*(Real *)(value) = ((PBD::SimulationModel*)clientData)->getClothYYStiffness();
-}
-
-void TW_CALL PBDWrapper::setXYStiffness(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((PBD::SimulationModel*)clientData)->setClothXYStiffness(val);
-}
-
-void TW_CALL PBDWrapper::getXYStiffness(void *value, void *clientData)
-{
-	*(Real *)(value) = ((PBD::SimulationModel*)clientData)->getClothXYStiffness();
-}
-
-void TW_CALL PBDWrapper::setYXPoissonRatio(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((PBD::SimulationModel*)clientData)->setClothYXPoissonRatio(val);
-}
-
-void TW_CALL PBDWrapper::getYXPoissonRatio(void *value, void *clientData)
-{
-	*(Real *)(value) = ((PBD::SimulationModel*)clientData)->getClothYXPoissonRatio();
-}
-
-void TW_CALL PBDWrapper::setXYPoissonRatio(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((PBD::SimulationModel*)clientData)->setClothXYPoissonRatio(val);
-}
-
-void TW_CALL PBDWrapper::getXYPoissonRatio(void *value, void *clientData)
-{
-	*(Real *)(value) = ((PBD::SimulationModel*)clientData)->getClothXYPoissonRatio();
-}
-
-void TW_CALL PBDWrapper::setNormalizeStretch(const void *value, void *clientData)
-{
-	const bool val = *(const bool *)(value);
-	((PBD::SimulationModel*)clientData)->setClothNormalizeStretch(val);
-}
-
-void TW_CALL PBDWrapper::getNormalizeStretch(void *value, void *clientData)
-{
-	*(bool *)(value) = ((PBD::SimulationModel*)clientData)->getClothNormalizeStretch();
-}
-
-void TW_CALL PBDWrapper::setNormalizeShear(const void *value, void *clientData)
-{
-	const bool val = *(const bool *)(value);
-	((PBD::SimulationModel*)clientData)->setClothNormalizeShear(val);
-}
-
-void TW_CALL PBDWrapper::getNormalizeShear(void *value, void *clientData)
-{
-	*(bool *)(value) = ((PBD::SimulationModel*)clientData)->getClothNormalizeShear();
-}
-
-void TW_CALL PBDWrapper::setBendingStiffness(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((PBD::SimulationModel*)clientData)->setClothBendingStiffness(val);
-}
-
-void TW_CALL PBDWrapper::getBendingStiffness(void *value, void *clientData)
-{
-	*(Real *)(value) = ((PBD::SimulationModel*)clientData)->getClothBendingStiffness();
-}
-
-void TW_CALL PBDWrapper::setBendingMethod(const void *value, void *clientData)
-{
-	const short val = *(const short *)(value);
-	((PBDWrapper*)clientData)->m_bendingMethod = val;
-	((PBDWrapper*)clientData)->reset();
-}
-
-void TW_CALL PBDWrapper::getBendingMethod(void *value, void *clientData)
-{
-	*(short *)(value) = ((PBDWrapper*)clientData)->m_bendingMethod;
-}
-
-void TW_CALL PBDWrapper::setClothSimulationMethod(const void *value, void *clientData)
-{
-	const short val = *(const short *)(value);
-	((PBDWrapper*)clientData)->m_clothSimulationMethod = val;
-	((PBDWrapper*)clientData)->reset();
-}
-
-void TW_CALL PBDWrapper::getClothSimulationMethod(void *value, void *clientData)
-{
-	*(short *)(value) = ((PBDWrapper*)clientData)->m_clothSimulationMethod;
-}
-
-void TW_CALL PBDWrapper::setSolidSimulationMethod(const void *value, void *clientData)
-{
-	const short val = *(const short *)(value);
-	((PBDWrapper*)clientData)->m_solidSimulationMethod = val;
-	((PBDWrapper*)clientData)->reset();
-}
-
-void TW_CALL PBDWrapper::getSolidSimulationMethod(void *value, void *clientData)
-{
-	*(short *)(value) = ((PBDWrapper*)clientData)->m_solidSimulationMethod;
-}

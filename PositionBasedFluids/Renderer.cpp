@@ -74,11 +74,11 @@ void Renderer::initVBOS(int numParticles, int numDiffuse, vector<int> triangles)
 	}
 }
 
-void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> triangles, Camera &cam,vector<Model *> &models) {
+void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> triangles, Camera &cam) {
 	//Set camera
-	glm::mat4 mView = cam.getMView();
+	glm::mat4 mView = cam.GetViewMatrix();
 	glm::mat4 normalMatrix = glm::inverseTranspose(mView);
-	glm::mat4 projection = glm::perspective(cam.zoom, aspectRatio, zNear, zFar);
+	glm::mat4 projection = glm::perspective(cam.Zoom, aspectRatio, zNear, zFar);
 	//glm::mat4 projection = glm::infinitePerspective(cam.zoom, aspectRatio, zNear);
 
 	//Clear buffer
@@ -97,9 +97,7 @@ void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> t
 	setMatrix(plane, projection, "projection");
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	
-	//render slope/rocks
-	renderObjects(projection, mView, cam, models);
+
 	//--------------------CLOTH-------------------------
 	renderCloth(projection, mView, cam, numCloth, triangles);
 
@@ -259,7 +257,7 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	setMatrix(depth, mView, "mView");
 	setMatrix(depth, projection, "projection");
 	setFloat(depth, radius, "pointRadius");
-	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
+	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.Zoom * 0.5f)), "pointScale");
 	
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
@@ -507,12 +505,4 @@ void Renderer::renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	setMatrix(cloth, mView, "mView");
 	
 	glDrawElements(GL_TRIANGLES, triangles.size(), GL_UNSIGNED_INT, 0);
-}
-void Renderer::renderObjects(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, std::vector<Model*>& models){
-	glUseProgram(slope.program);
-	setMatrix(slope, projection, "projection");
-	setMatrix(slope, mView, "view");
-	for (Model * m : models){
-		m->Draw(slope);
-	}
 }

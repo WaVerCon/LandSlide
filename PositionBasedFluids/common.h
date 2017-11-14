@@ -19,6 +19,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/constants.hpp>
 #include <vector>
+#include<string>
 #include <Windows.h>
+#include"SPlisHSPlasH\TimeManager.h"
 
 #endif

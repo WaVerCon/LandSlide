@@ -5,14 +5,7 @@
 #include "parameters.h"
 #include "setupFunctions.h"
 
-#include "SPlisHSPlasH\TimeManager.h"
-#include "Utilities/PartioReaderWriter.h"
-#include "PositionBasedDynamicsWrapper/PBDRigidBody.h"
-#include "Utilities/OBJLoader.h"
-#include "SPlisHSPlasH/Utilities/PoissonDiskSampling.h"
-#include "PositionBasedDynamicsWrapper/PBDWrapper.h"
-#include "Demos/Common/DemoBase.h"
-#include "Utilities/FileSystem.h"
+
 
 class Scene {
 public:
@@ -146,14 +139,22 @@ public:
 
 class LandSlide : public Scene {
 public:
-	LandSlide(std::string name) : Scene(name) {}
+	LandSlide(std::string name) : Scene(name) {
+		
+	}
+	PBDWrapper pbdWrapper;
+	std::string scene_file;
 
 	virtual void init(tempSolver* tp, solverParams* sp) {
 		const float radius = 0.1f;
 		const float restDistance = radius * 0.5f;
 		float3 lower = make_float3(0.0f, 0.1f, 0.0f);
 		int3 dims = make_int3(68, 48, 88);
-		createParticleGrid(tp, sp, lower, dims, restDistance);
+		scene_file = "Scenes/LandSlide.json";
+		std::vector<string> rigidBodyFiles;
+		pbdWrapper.readScene(scene_file,rigidBodyFiles);
+		initRigidBodies(pbdWrapper, tp, sp, rigidBodyFiles, Vector3r::Zero(), Matrix3r::Identity());
+		sp->numRigidParticles = tp->positions.size();
 
 		sp->radius = radius;
 		sp->restDistance = restDistance;
@@ -184,11 +185,9 @@ public:
 		tp->diffusePos.resize(sp->numDiffuse);
 		tp->diffuseVelocities.resize(sp->numDiffuse);
 
-		//加一个斜坡到场景中
-		tp->models.clear();
-		Model slope("Resources/models/Slope.obj");
-		tp->models.push_back(&slope);
+		
 	}
+	
 };
 
 #endif

@@ -2,6 +2,8 @@
 #define PARAMETERS_H
 
 #include "common.h"
+#include"SPlisHSPlasH\RigidBodyObject.h"
+#include"PositionBasedDynamicsWrapper\PBDRigidBody.h"
 
 struct tempSolver {
 	std::vector<float4> positions;
@@ -15,7 +17,9 @@ struct tempSolver {
 	std::vector<float> restLengths;
 	std::vector<float> stiffness;
 	std::vector<int> triangles;
-	std::vector<Model *> models;
+	std::vector<SPH::RigidBodyParticleObject> rigidBodies;//每个粒子所属的刚体
+	//std::vector<float> boundaryPsi;
+	//std::vector<float3> force;
 };
 
 struct solver {
@@ -24,6 +28,13 @@ struct solver {
 	float3* velocities;
 	int* phases;
 	float* densities;
+
+	float3* forces;
+	float* boundaryPsi;
+	
+	float4* rigidPosPinned;//用于快速的data transfer
+	float3* rigidVelPinned;
+	float3* rigidForcePinned;
 
 	float4* diffusePos;//这两个数组用于生成foam
 	float3* diffuseVelocities;
@@ -58,6 +69,9 @@ public:
 	int numCloth;
 	int numConstraints;
 
+	int numRigidBody;
+	int numRigidParticles;
+
 	float3 gravity;
 	float3 bounds;
 
@@ -69,13 +83,13 @@ public:
 
 	float KPOLY;
 	float SPIKY;
-	float restDensity;
+	float restDensity;//ρ0
 	float lambdaEps;
 	float vorticityEps;
-	float C;
-	float K;
+	float C;//XSPH viscosity
+	float K;//PBF中Scorr项
 	float dqMag;
-	float wQH;
+	float wQH;//PBF中Scorr项
 };
 
 #endif

@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "Shader.hpp"
-#include "Camera.hpp"
+#include "Camera.h"
 #include"Model.h"
 
 class Renderer {
@@ -11,7 +11,7 @@ public:
 	Renderer();
 	~Renderer();
 	void initVBOS(int numParticles, int numDiffuse, std::vector<int> triangles);
-	void run(int numParticles, int numDiffuse, int numCloth, std::vector<int> triangles, Camera &cam,std::vector<Model*>& models );
+	void run(int numParticles, int numDiffuse, int numCloth, std::vector<int> triangles, Camera &cam);
 
 	cudaGraphicsResource *resources[3];
 	GLuint positionVBO;

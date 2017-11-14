@@ -5,7 +5,6 @@
 #include "ParticleSystem.h"
 #include "Renderer.h"
 #include "Scene.hpp"
-#include"Model.h"
 
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -13,6 +12,18 @@
 
 #include <IL\il.h>
 #include <IL\ilut.h>
+
+//SPlishSPLASH
+#include "SPlisHSPlasH/Common.h"
+#include "SPlisHSPlasH/TimeManager.h"
+#include <Eigen/Dense>
+#include <iostream>
+#include "SPlisHSPlasH/Utilities/Timing.h"
+#include "Utilities/PartioReaderWriter.h"
+#include "PositionBasedDynamicsWrapper/PBDRigidBody.h"
+#include "PositionBasedDynamicsWrapper/PBDWrapper.h"
+#include "Utilities/FileSystem.h"
+
 
 #define cudaCheck(x) { cudaError_t err = x; if (err != cudaSuccess) { printf("Cuda error: %d in %s at %s:%d\n", err, #x, __FILE__, __LINE__); assert(0); } }
 
@@ -99,23 +110,23 @@ void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		cam.wasdMovement(FORWARD, deltaTime);
+		cam.ProcessKeyboard(FORWARD, deltaTime);
 
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cam.wasdMovement(BACKWARD, deltaTime);
+		cam.ProcessKeyboard(BACKWARD, deltaTime);
 
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cam.wasdMovement(RIGHT, deltaTime);
+		cam.ProcessKeyboard(RIGHT, deltaTime);
 
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cam.wasdMovement(LEFT, deltaTime);
+		cam.ProcessKeyboard(LEFT, deltaTime);
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-		cam.wasdMovement(UP, deltaTime);
+		cam.ProcessKeyboard(UP, deltaTime);
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-		cam.wasdMovement(DOWN, deltaTime);
-
+		cam.ProcessKeyboard(DOWN, deltaTime);
+		
 	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
 		system.running = false;
 
@@ -134,7 +145,7 @@ void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam) {
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
-		cam.mouseMovement((float(xpos) - lastX), (lastY - float(ypos)), deltaTime);
+		cam.ProcessMouseMovement((float(xpos) - lastX), (lastY - float(ypos)), deltaTime);
 }
 
 
@@ -164,6 +175,7 @@ void initializeState(ParticleSystem &system, tempSolver &tp, solverParams &tempP
 	//FluidCloth scene("FluidCloth");
 	scene.init(&tp, &tempParams);
 	system.initialize(tp, tempParams);
+	SPH::TimeManager::getCurrent()->setTimeStepSize(0.005);//set initial timestep
 }
 
 void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolver &tp, solverParams &tempParams) {
@@ -184,5 +196,5 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolve
 	cudaGraphicsUnmapResources(3, render.resources, 0);
 
 	//Render
-	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.numCloth, tp.triangles, cam,tp.models);
+	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.numCloth, tp.triangles, cam);
 }

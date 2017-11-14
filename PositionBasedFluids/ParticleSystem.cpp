@@ -26,6 +26,12 @@ ParticleSystem::~ParticleSystem() {
 	cudaCheck(cudaFree(s->numContacts));
 	cudaCheck(cudaFree(s->deltaPs));
 	cudaCheck(cudaFree(s->buffer0));
+	
+	cudaCheck(cudaFree(s->forces));
+	cudaCheck(cudaFree(s->boundaryPsi));
+	cudaCheck(cudaFreeHost(s->rigidPosPinned));
+	cudaCheck(cudaFreeHost(s->rigidVelPinned));
+	cudaCheck(cudaFreeHost(s->rigidForcePinned));
 	delete s;
 }
 
@@ -52,7 +58,13 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	cudaCheck(cudaMalloc((void**)&s->numContacts, tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMalloc((void**)&s->deltaPs, tempParams.numParticles * sizeof(float3)));
 	cudaCheck(cudaMalloc((void**)&s->buffer0, tempParams.numParticles * sizeof(float)));
-
+	//RigidBodyParticle info
+	cudaCheck(cudaMalloc((void**)&s->forces, tempParams.numRigidParticles*sizeof(float3)));
+	cudaCheck(cudaMalloc((void**)&s->boundaryPsi, tempParams.numRigidParticles*sizeof(float)));
+	cudaCheck(cudaMallocHost((void**)&s->rigidPosPinned, tempParams.numRigidParticles*sizeof(float4)));
+	cudaCheck(cudaMallocHost((void**)&s->rigidVelPinned, tempParams.numRigidParticles*sizeof(float3)));
+	cudaCheck(cudaMallocHost((void**)&s->rigidForcePinned, tempParams.numRigidParticles*sizeof(float3)));
+	
 	cudaCheck(cudaMemset(s->oldPos, 0, tempParams.numParticles * sizeof(float4)));
 	cudaCheck(cudaMemset(s->newPos, 0, tempParams.numParticles * sizeof(float4)));
 	cudaCheck(cudaMemset(s->velocities, 0, tempParams.numParticles * sizeof(float3)));
@@ -67,6 +79,13 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	cudaCheck(cudaMemset(s->numNeighbors, 0, tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMemset(s->gridCells, 0, tempParams.maxParticles * tempParams.gridSize * sizeof(int)));
 	cudaCheck(cudaMemset(s->gridCounters, 0, tempParams.gridSize * sizeof(int)));
+	//RigidBodyParticle
+	cudaCheck(cudaMemset(s->forces, 0, tempParams.numRigidParticles*sizeof(float3)));
+	cudaCheck(cudaMemset(s->boundaryPsi, 0, tempParams.numRigidParticles*sizeof(float)));
+	
+	cudaCheck(cudaMemset(s->rigidPosPinned, 0, tempParams.numRigidParticles*sizeof(float4)));
+	cudaCheck(cudaMemset(s->rigidVelPinned, 0, tempParams.numRigidParticles*sizeof(float3)));
+	cudaCheck(cudaMemset(s->rigidForcePinned, 0, tempParams.numRigidParticles*sizeof(float3)));
 
 	cudaCheck(cudaMemcpy(s->oldPos, &tp.positions[0], tempParams.numParticles * sizeof(float4), cudaMemcpyHostToDevice));
 	cudaCheck(cudaMemcpy(s->newPos, &tp.positions[0], tempParams.numParticles * sizeof(float4), cudaMemcpyHostToDevice));
@@ -81,6 +100,63 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	if (tp.stiffness.size()>0)
 		cudaCheck(cudaMemcpy(s->stiffness, &tp.stiffness[0], tempParams.numConstraints * sizeof(int), cudaMemcpyHostToDevice));
 	setParams(&tempParams);
+}
+void ParticleSystem::updateBoundaryParticles(const tempSolver &tp, solverParams &params)//对刚体粒子的velocity，直接使用计算结果进行替代，而不累加
+{
+	const unsigned int nObjects = params.numRigidBody;
+	int pindex = 0;
+	cudaCheck(cudaMemcpy(s->rigidPosPinned, s->newPos, params.numRigidParticles*sizeof(float4), cudaMemcpyDeviceToHost));
+	for (unsigned int i = 0; i < nObjects; i++)
+	{
+		SPH::RigidBodyParticleObject rbpo = tp.rigidBodies[i];
+		SPH::RigidBodyObject *rbo = rbpo.rigidBody;
+		if (rbo->isDynamic())
+		{
+			for (unsigned int j = 0; j < rbpo.numberOfParticles; ++j){
+				unsigned int idx = pindex + j;
+				SPH::Vector3r pos = rbo->getRotation() * SPH::Vector3r(s->rigidPosPinned[idx].x, s->rigidPosPinned[idx].y, s->rigidPosPinned[idx].z) + rbo->getPosition();
+				s->rigidPosPinned[idx] = make_float4(pos.x, pos.y, pos.z, s->rigidPosPinned[idx].w);
+				SPH::Vector3r vel = rbo->getAngularVelocity().cross(SPH::Vector3r(s->rigidPosPinned[idx].x, s->rigidPosPinned[idx].y, s->rigidPosPinned[idx].z) - rbo->getPosition()) + rbo->getVelocity();
+				s->rigidVelPinned[idx] = make_float3(vel.x, vel.y, vel.z);
+			}
+		}
+		pindex += rbpo.numberOfParticles;
+	}
+	cudaCheck(cudaMemcpy(s->oldPos, s->rigidPosPinned, params.numRigidParticles*sizeof(float4), cudaMemcpyHostToDevice));
+	cudaCheck(cudaMemcpy(s->newPos, s->rigidPosPinned, params.numRigidParticles*sizeof(float4), cudaMemcpyHostToDevice));
+	cudaCheck(cudaMemcpy(s->velocities, s->rigidVelPinned, params.numRigidParticles*sizeof(float3), cudaMemcpyHostToDevice));
+}
+void ParticleSystem::updateBoundaryForces(tempSolver &tp, solverParams &tempParams){
+	Real h = SPH::TimeManager::getCurrent()->getTimeStepSize();
+	const unsigned int nObjects = tempParams.numRigidBody;
+	int pindex = 0;
+	cudaCheck(cudaMemcpy(s->rigidForcePinned, s->forces, tempParams.numRigidParticles*sizeof(float3), cudaMemcpyDeviceToHost));
+	for (unsigned int i = 0; i < nObjects; i++)
+	{
+		SPH::RigidBodyParticleObject rbpo = tp.rigidBodies[i];
+		SPH::RigidBodyObject *rbo = rbpo.rigidBody;
+		if (rbo->isDynamic())
+		{
+			((SPH::PBDRigidBody*)rbo)->updateTimeStepSize();
+			SPH::Vector3r force, torque;
+			force.setZero();
+			torque.setZero();
+			
+			for (int j = 0; j < rbpo.numberOfParticles; j++)
+			{
+				unsigned int idx = pindex + j;
+				SPH::Vector3r m_f = SPH::Vector3r(s->rigidForcePinned[idx].x, s->rigidForcePinned[idx].y, s->rigidForcePinned[idx].z);
+				force += m_f;
+				SPH::Vector3r pos = SPH::Vector3r(s->rigidPosPinned[idx].x, s->rigidPosPinned[idx].y, s->rigidPosPinned[idx].z);
+				torque += (pos - rbo->getPosition()).cross(m_f);
+				s->rigidForcePinned[idx] = make_float3(0);
+			}
+			rbo->addForce(force);
+			rbo->addTorque(torque);
+		}
+		pindex += rbpo.numberOfParticles;
+	}
+	cudaCheck(cudaMemcpy(s->forces, s->rigidForcePinned, tempParams.numRigidParticles*sizeof(float3),cudaMemcpyHostToDevice));
 }
 
 void ParticleSystem::updateWrapper(solverParams &tempParams) {

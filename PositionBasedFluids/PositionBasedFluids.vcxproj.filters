@@ -78,9 +78,6 @@
     <Filter Include="shaders\model">
       <UniqueIdentifier>{a9d74885-eb78-4405-a445-4170ad33b5a4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Utilities">
-      <UniqueIdentifier>{1bb6808c-817c-43e6-8b06-76e89b5bed2a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\PBDWrapper">
       <UniqueIdentifier>{ed0381a7-5fc6-4994-832e-cf9deee95430}</UniqueIdentifier>
     </Filter>
@@ -89,6 +86,15 @@
     </Filter>
     <Filter Include="Source Files\PBDWrapper">
       <UniqueIdentifier>{87812865-d0fb-4327-9568-f760f4ef48d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\PBDUtilities">
+      <UniqueIdentifier>{a9c35a22-cddb-48db-ace3-b9cedeffc68b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scenes">
+      <UniqueIdentifier>{630b3291-db13-4546-9dc2-bea548b2dd0b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utilities">
+      <UniqueIdentifier>{1bb6808c-817c-43e6-8b06-76e89b5bed2a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -101,29 +107,26 @@
     <ClCompile Include="ParticleSystem.cpp">
       <Filter>Source Files\physics</Filter>
     </ClCompile>
-    <ClCompile Include="SPlisHSPlasH\TimeManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SPlisHSPlasH\TriangleMesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utilities\OBJLoader.cpp">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="Utilities\PartioReaderWriter.cpp">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="Utilities\SceneLoader.cpp">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="Utilities\StringTools.cpp">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities\FileSystem.cpp">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="PositionBasedDynamicsWrapper\PBDWrapper.cpp">
       <Filter>Source Files\PBDWrapper</Filter>
+    </ClCompile>
+    <ClCompile Include="SPlisHSPlasH\TriangleMesh.cpp">
+      <Filter>Source Files\PBDWrapper</Filter>
+    </ClCompile>
+    <ClCompile Include="SPlisHSPlasH\TimeManager.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="SPlisHSPlasH\Utilities\Timing.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="SPlisHSPlasH\Utilities\PoissonDiskSampling.cpp">
+      <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -138,9 +141,6 @@
     </ClInclude>
     <ClInclude Include="Shader.hpp">
       <Filter>Header Files\rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="Camera.hpp">
-      <Filter>Source Files\rendering</Filter>
     </ClInclude>
     <ClInclude Include="FoamParticle.hpp">
       <Filter>Header Files\foam</Filter>
@@ -160,25 +160,7 @@
     <ClInclude Include="setupFunctions.h">
       <Filter>Header Files\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="SPlisHSPlasH\TimeManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SPlisHSPlasH\TriangleMesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utilities\OBJLoader.h">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="Utilities\FileSystem.h">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
     <ClInclude Include="Utilities\PartioReaderWriter.h">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="Utilities\SceneLoader.h">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="Utilities\StringTools.h">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
     <ClInclude Include="PositionBasedDynamicsWrapper\PBDRigidBody.h">
@@ -192,6 +174,63 @@
     </ClInclude>
     <ClInclude Include="SPlisHSPlasH\StaticRigidBody.h">
       <Filter>Header Files\PBDWrapper</Filter>
+    </ClInclude>
+    <ClInclude Include="SPlisHSPlasH\TriangleMesh.h">
+      <Filter>Header Files\PBDWrapper</Filter>
+    </ClInclude>
+    <ClInclude Include="SPlisHSPlasH\Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SPlisHSPlasH\Utilities\PoissonDiskSampling.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="SPlisHSPlasH\TimeManager.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="SPlisHSPlasH\Utilities\Timing.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\OBJLoader.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Hashmap.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\IndexedFaceMesh.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\IndexedTetMesh.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\ObjectArray.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\SceneLoader.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\TetGenLoader.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Timing.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Utilities.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\VolumeIntegration.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Config.h">
+      <Filter>shaders\PBDUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -266,6 +305,9 @@
     </None>
     <None Include="model.vs">
       <Filter>shaders\model</Filter>
+    </None>
+    <None Include="Scenes\LandSlide.json">
+      <Filter>scenes</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

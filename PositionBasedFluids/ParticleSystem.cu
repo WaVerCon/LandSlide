@@ -9,6 +9,7 @@ static dim3 dims;
 static dim3 diffuseDims;
 static dim3 clothDims;
 static dim3 gridDims;
+static dim3 rigidParticleDims;
 static const int blockSize = 128;
 
 __constant__ solverParams sp;
@@ -238,6 +239,20 @@ __global__ void updateNeighbors(float4* newPos, int* phases, int* gridCells, int
 	}
 }
 
+__global__ void computeBoundaryPsi(float4* newPos, float* boundaryPsi, int* phases, int *neighbors, int* numNeighbors){
+	int index = threadIdx.x + (blockIdx.x*blockDim.x);
+	if (index >= sp.numRigidParticles ||phases[index]==0) return;
+	float delta = 0;
+	for (int i = 0; i < numNeighbors[index]; ++i){
+		int nindex = index*sp.maxNeighbors + i;
+		if (phases[neighbors[nindex]] == phases[index]){
+			delta += WPoly6(make_float3(newPos[index]), make_float3(newPos[nindex]));
+		}
+	}
+	float volume = 1.0 / delta;
+	boundaryPsi[index] = sp.restDensity*volume;
+}
+
 __global__ void particleCollisions(float4* newPos, int* contacts, int* numContacts, float3* deltaPs, float* buffer0) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= sp.numParticles) return;
@@ -261,7 +276,7 @@ __global__ void particleCollisions(float4* newPos, int* contacts, int* numContac
 	}
 }
 
-__global__ void calcDensities(float4* newPos, int* phases, int* neighbors, int* numNeighbors, float* densities) {//算密度时丢弃了m，因为m视作相等
+__global__ void calcDensities(float4* newPos, int* phases, int* neighbors, int* numNeighbors,float* boundaryPsi, float* densities) {//算密度时丢弃了m，因为m视作相等
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= sp.numParticles || phases[index] != 0) return;
 
@@ -269,35 +284,48 @@ __global__ void calcDensities(float4* newPos, int* phases, int* neighbors, int* 
 	for (int i = 0; i < numNeighbors[index]; i++) {
 		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0)
 			rhoSum += WPoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]]));
+		else//boudary:Akinci2012
+			rhoSum += boundaryPsi[neighbors[(index*sp.maxNeighbors + i)]] * WPoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]]));
 	}
 
 	densities[index] = rhoSum;
 }
 
-__global__ void calcLambda(float4* newPos, int* phases, int* neighbors, int* numNeighbors, float* densities, float* buffer0) {
+__global__ void calcLambda(float4* newPos, int* phases, int* neighbors, int* numNeighbors, float* densities,float* boundaryPsi, float* buffer0) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= sp.numParticles || phases[index] != 0) return;
 
 	float densityConstraint = (densities[index] / sp.restDensity) - 1;
 	float3 gradientI = make_float3(0.0f);
 	float sumGradients = 0.0f;
-	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0) {
-			//Calculate gradient with respect to j
-			float3 gradientJ = WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]])) / sp.restDensity;
+	if (densityConstraint != 0.0){
+		for (int i = 0; i < numNeighbors[index]; i++) {
+			if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0) {
+				//Calculate gradient with respect to j
+				float3 gradientJ = WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]])) / sp.restDensity;
 
-			//Add magnitude squared to sum
-			sumGradients += pow(length(gradientJ), 2);
-			gradientI += gradientJ;
+				//Add magnitude squared to sum
+				sumGradients += pow(length(gradientJ), 2);
+				gradientI += gradientJ;
+			}
+			else{
+				//Boudary:Akinci2012
+				int nindex = neighbors[(index * sp.maxNeighbors) + i];
+				float3 gradientJ = boundaryPsi[nindex] * WSpiky(make_float3(newPos[index]), make_float3(newPos[nindex])) / sp.restDensity;
+				sumGradients += pow(length(gradientJ), 2);
+				gradientI += gradientJ;
+			}
 		}
-	}
 
-	//Add the particle i gradient magnitude squared to sum
-	sumGradients += pow(length(gradientI), 2);
-	buffer0[index] = (-1 * densityConstraint) / (sumGradients + sp.lambdaEps);
+		//Add the particle i gradient magnitude squared to sum
+		sumGradients += pow(length(gradientI), 2);
+		buffer0[index] = (-1 * densityConstraint) / (sumGradients + sp.lambdaEps);
+	}
+	else
+		buffer0[index] = 0;
 }
 
-__global__ void calcDeltaP(float4* newPos, int* phases, int* neighbors, int* numNeighbors, float3* deltaPs, float* buffer0) {
+__global__ void calcDeltaP(float4* newPos, int* phases, int* neighbors, int* numNeighbors, float3* deltaPs, float* buffer0,float* boundaryPsi,float3 * force) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= sp.numParticles || phases[index] != 0) return;
 	deltaPs[index] = make_float3(0);
@@ -310,6 +338,16 @@ __global__ void calcDeltaP(float4* newPos, int* phases, int* neighbors, int* num
 			deltaP += WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]])) * (lambdaSum + sCorr);
 
 		}
+		else{
+			//Boundary:Akinci2012
+			float lambdaSum = 2 * buffer0[index];
+			float sCorr = sCorrCalc(newPos[index], newPos[neighbors[(index * sp.maxNeighbors) + i]]);
+			float3 dx = boundaryPsi[neighbors[index*sp.maxNeighbors + i]] * WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]])) * (lambdaSum + sCorr);
+			deltaP += dx;
+
+			float invH2 = deltaT*deltaT;
+			force[neighbors[index*sp.maxNeighbors + i]] = dx*invH2;
+		}
 	}
 
 	deltaPs[index] = deltaP / sp.restDensity;
@@ -319,7 +357,7 @@ __global__ void applyDeltaP(float4* newPos, float3* deltaPs, float* buffer0, int
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= sp.numParticles) return;
 
-	if (buffer0[index] > 0 && flag == 1) newPos[index] += make_float4(deltaPs[index] / buffer0[index], 0);
+	if (buffer0[index] > 0 && flag == 1) newPos[index] += make_float4(deltaPs[index] / buffer0[index], 0);//SOR
 	else if (flag == 0) newPos[index] += make_float4(deltaPs[index], 0);
 	//newPos[index] += make_float4(deltaPs[index], 0);
 }
@@ -499,17 +537,21 @@ struct OBCmp {
 	}
 };
 
+void initBoundaryPsi(solver *s, solverParams *sp){
+	computeBoundaryPsi <<<rigidParticleDims, blockSize >>>(s->newPos,s->boundaryPsi, s->phases, s->neighbors, s->numNeighbors);
+}
+
 void updateWater(solver* s, int numIterations) {
 	//------------------WATER-----------------
 	for (int i = 0; i < numIterations; i++) {
 		//Calculate fluid densities and store in densities
-		calcDensities<<<dims, blockSize>>>(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->densities);
+		calcDensities<<<dims, blockSize>>>(s->newPos, s->phases, s->neighbors, s->numNeighbors,s->boundaryPsi, s->densities);
 
 		//Calculate all lambdas and store in buffer0
-		calcLambda<<<dims, blockSize>>>(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->densities, s->buffer0);
+		calcLambda<<<dims, blockSize>>>(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->densities,s->boundaryPsi, s->buffer0);
 
 		//calculate deltaP
-		calcDeltaP<<<dims, blockSize>>>(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->deltaPs, s->buffer0);
+		calcDeltaP << <dims, blockSize >> >(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->deltaPs, s->buffer0, s->boundaryPsi, s->forces);
 
 		//update position x*i = x*i + deltaPi
 		applyDeltaP<<<dims, blockSize>>>(s->newPos, s->deltaPs, s->buffer0, 0);
@@ -562,8 +604,11 @@ void update(solver* s, solverParams* sp) {
 void setParams(solverParams *tempParams) {
 	dims = int(ceil(tempParams->numParticles / blockSize + 0.5f));
 	diffuseDims = int(ceil(tempParams->numDiffuse / blockSize + 0.5f));
-	clothDims = int(ceil(tempParams->numConstraints / blockSize + 0.5f));
+	clothDims = int(ceil(tempParams->numConstraints / blockSize + 0.5f)); 
 	gridDims = int(ceil(tempParams->gridSize / blockSize + 0.5f));
+
+	rigidParticleDims = int(ceil(tempParams->numRigidParticles / blockSize) + 0.5f));
+
 	cudaCheck(cudaMemcpyToSymbol(sp, tempParams, sizeof(solverParams)));
 }
 

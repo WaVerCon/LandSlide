@@ -22,6 +22,10 @@ namespace SPH
 		virtual void addForce(const Vector3r &f) = 0;
 		virtual void addTorque(const Vector3r &t) = 0;
 	};
+	struct RigidBodyParticleObject{
+		RigidBodyObject *rigidBody;
+		unsigned int numberOfParticles;
+	};
 }
 
 #endif 

@@ -71,8 +71,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\Administrator\Documents\Visual Studio 2013\Projects\OpenGLLibs\includes;C:\Users\Administrator\Documents\Visual Studio 2013\Projects\DevIL Windows SDK\include;$(CUDA_INC_PATH);$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Administrator\Documents\Visual Studio 2013\Projects\OpenGLLibs\libs;C:\Users\Administrator\Documents\Visual Studio 2013\Projects\DevIL Windows SDK\lib\x86\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Administrator\Documents\Visual Studio 2013\Projects\OpenGLLibs\includes;C:\Users\Administrator\Documents\Visual Studio 2013\Projects\DevIL Windows SDK\include;$(CUDA_INC_PATH);C:\LandSlide\PositionBasedDynamics\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Administrator\Documents\Visual Studio 2013\Projects\OpenGLLibs\libs;C:\Users\Administrator\Documents\Visual Studio 2013\Projects\DevIL Windows SDK\lib\x86\Release;C:\LandSlide\PositionBasedDynamics\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -90,13 +90,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\OpenGL\GLEW\include;C:\OpenGL\GLM;C:\OpenGL\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\LandSlide\extern\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\OpenGL\GLEW\lib\Release\x64;C:\OpenGL\GLFW\lib-msvc120;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32s.lib;DevIL.lib;ILU.lib;ILUT.lib;cudart.lib;assimpd.lib;SOIL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32s.lib;DevIL.lib;ILU.lib;ILUT.lib;cudart.lib;assimpd.lib;SOIL.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\lib\Debug\Utilities_d.lib;..\lib\Debug\partio_d.lib;..\lib\Debug\zlib_d.lib;..\lib\Debug\SPlisHSPlasH_d.lib;Simulation_d.lib;PositionBasedDynamics_d.lib;Utils_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -184,31 +184,42 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="SPlisHSPlasH\TimeManager.cpp" />
     <ClCompile Include="SPlisHSPlasH\TriangleMesh.cpp" />
-    <ClCompile Include="Utilities\FileSystem.cpp" />
-    <ClCompile Include="Utilities\OBJLoader.cpp" />
+    <ClCompile Include="SPlisHSPlasH\Utilities\PoissonDiskSampling.cpp" />
+    <ClCompile Include="SPlisHSPlasH\Utilities\Timing.cpp" />
     <ClCompile Include="Utilities\PartioReaderWriter.cpp" />
-    <ClCompile Include="Utilities\SceneLoader.cpp" />
     <ClCompile Include="Utilities\StringTools.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.hpp" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Config.h" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Hashmap.h" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\IndexedFaceMesh.h" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\IndexedTetMesh.h" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\ObjectArray.h" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\OBJLoader.h" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\SceneLoader.h" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\TetGenLoader.h" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Timing.h" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Utilities.h" />
+    <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\VolumeIntegration.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="helper_math.h" />
     <ClInclude Include="FoamParticle.hpp" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="parameters.h" />
     <ClInclude Include="Particle.hpp" />
     <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="PositionBasedDynamicsWrapper\PBDRigidBody.h" />
     <ClInclude Include="PositionBasedDynamicsWrapper\PBDWrapper.h" />
+    <ClInclude Include="SPlisHSPlasH\Common.h" />
     <ClInclude Include="SPlisHSPlasH\RigidBodyObject.h" />
     <ClInclude Include="SPlisHSPlasH\StaticRigidBody.h" />
     <ClInclude Include="SPlisHSPlasH\TimeManager.h" />
     <ClInclude Include="SPlisHSPlasH\TriangleMesh.h" />
-    <ClInclude Include="Utilities\FileSystem.h" />
-    <ClInclude Include="Utilities\OBJLoader.h" />
+    <ClInclude Include="SPlisHSPlasH\Utilities\PoissonDiskSampling.h" />
+    <ClInclude Include="SPlisHSPlasH\Utilities\Timing.h" />
     <ClInclude Include="Utilities\PartioReaderWriter.h" />
-    <ClInclude Include="Utilities\SceneLoader.h" />
-    <ClInclude Include="Utilities\StringTools.h" />
     <None Include="clothMesh.frag" />
     <None Include="clothMesh.vert" />
     <None Include="model.frag" />
@@ -238,6 +249,7 @@
     <None Include="plane.vert" />
     <None Include="radiance.frag" />
     <None Include="radiance.vert" />
+    <None Include="Scenes\LandSlide.json" />
     <None Include="thickness.frag" />
   </ItemGroup>
   <ItemGroup>
