@@ -10,25 +10,20 @@
 #include <stdlib.h>
 #include <crtdbg.h>
 
-#include <IL\il.h>
-#include <IL\ilut.h>
+//#include <IL\il.h>
+//#include <IL\ilut.h>
 
 //SPlishSPLASH
-#include "SPlisHSPlasH/Common.h"
-#include "SPlisHSPlasH/TimeManager.h"
-#include <Eigen/Dense>
+#include <Demos\Utils\Timing.h>
 #include <iostream>
-#include "SPlisHSPlasH/Utilities/Timing.h"
-#include "Utilities/PartioReaderWriter.h"
-#include "PositionBasedDynamicsWrapper/PBDRigidBody.h"
-#include "PositionBasedDynamicsWrapper/PBDWrapper.h"
-#include "Utilities/FileSystem.h"
+#include <Demos\Simulation\TimeManager.h>
 
 
 #define cudaCheck(x) { cudaError_t err = x; if (err != cudaSuccess) { printf("Cuda error: %d in %s at %s:%d\n", err, #x, __FILE__, __LINE__); assert(0); } }
 
+
 static const int width = 1280;
-static const int height = 720;
+static const int height =720;
 static const GLfloat lastX = (width / 2);
 static const GLfloat lastY = (height / 2);
 static float deltaTime = 0.0f;
@@ -36,10 +31,12 @@ static float lastFrame = 0.0f;
 static int w = 0;
 static bool ss = false;
 
-void initializeState(ParticleSystem &system, tempSolver &tp, solverParams &tempParams);
+void initializeState(Scene &scene,ParticleSystem &system, tempSolver &tp, solverParams &tempParams);
 void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam);
-void saveVideo();
-void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolver &tp, solverParams &tempParams);
+//void saveVideo();
+void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolver &tp, solverParams &tempParams, LandSlide &scene);
+
+
 
 int main() {
 	//Checks for memory leaks in debug mode
@@ -66,17 +63,28 @@ int main() {
 	// Define the viewport dimensions
 	glViewport(0, 0, width, height);
 
-	ilutInit();
-	ilInit();
-	ilutRenderer(ILUT_OPENGL);
+
+
+	//ilutInit();
+	//ilInit();
+	//ilutRenderer(ILUT_OPENGL);
 	
 	Camera cam = Camera();
-	Renderer render = Renderer();
 	ParticleSystem system = ParticleSystem();
 	tempSolver tp;
 	solverParams tempParams;
-	initializeState(system, tp, tempParams);
+	LandSlide scene("LandSlide");
+	initializeState(scene,system, tp, tempParams);
+	PBDWrapper& pbdWrapper = scene.getPBDWrapper();
+	std::vector<PBD::RigidBody *> bodies = pbdWrapper.getSimulationModel().getRigidBodies();
+	Renderer render(bodies);
+
 	render.initVBOS(tempParams.numParticles, tempParams.numDiffuse, tp.triangles);
+	
+	//std::vector<Model*> models = scene.getModels();
+
+	Timing::printAverageTimes();
+	Timing::printTimeSums();
 
 	while (!glfwWindowShouldClose(window)) {
 		//Set frame times
@@ -89,8 +97,8 @@ int main() {
 		handleInput(window, system, cam);
 
 		//Update physics and render
-		mainUpdate(system, render, cam, tp, tempParams);
-		saveVideo();
+		mainUpdate(system, render, cam, tp, tempParams,scene);
+		//saveVideo();
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
@@ -145,10 +153,10 @@ void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam) {
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
-		cam.ProcessMouseMovement((float(xpos) - lastX), (lastY - float(ypos)), deltaTime);
+		cam.ProcessMouseMovement((float(xpos) - lastX),lastY- float(ypos), deltaTime);
 }
 
-
+/*
 void saveVideo() {
 	if (ss == true) {
 		ILuint imageID = ilGenImage();
@@ -168,19 +176,25 @@ void saveVideo() {
 		ilDeleteImage(imageID);
 		w++;
 	}
-}
+}*/
 
-void initializeState(ParticleSystem &system, tempSolver &tp, solverParams &tempParams) {
-	LandSlide scene("LandSlide");
+void initializeState(Scene& scene,ParticleSystem &system, tempSolver &tp, solverParams &tempParams) {
+	
 	//FluidCloth scene("FluidCloth");
 	scene.init(&tp, &tempParams);
 	system.initialize(tp, tempParams);
-	SPH::TimeManager::getCurrent()->setTimeStepSize(0.005);//set initial timestep
+	//PBD::TimeManager::getCurrent()->setTimeStepSize(0.0083f);//set initial timestep
+	PBD::TimeManager::getCurrent()->setTimeStepSize(0.00083f);
 }
 
-void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolver &tp, solverParams &tempParams) {
+void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolver &tp, solverParams &tempParams,LandSlide &scene) {
+	PBDWrapper& pbdWrapper = scene.getPBDWrapper();
+	std::vector<PBD::RigidBody *> bodies = pbdWrapper.getSimulationModel().getRigidBodies();
+	//std::vector<Model*> models = scene.getModels();
+	std::vector<SPH::RigidBodyParticleObject*> rigidBodies = scene.getRigidBodies();
+
 	//Step physics
-	system.updateWrapper(tempParams);
+	//system.updateWrapper(tempParams);
 
 	//Update the VBO
 	void* positionsPtr;
@@ -195,6 +209,17 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolve
 	system.getDiffuse((float*)diffusePosPtr, (float*)diffuseVelPtr, tempParams.numDiffuse);
 	cudaGraphicsUnmapResources(3, render.resources, 0);
 
+	/*std::vector<float4> tmp(tempParams.numParticles);
+
+	cudaCheck(cudaMemcpy(tmp.data(), positionsPtr, tempParams.numParticles * sizeof(float4), cudaMemcpyDeviceToHost));*/
+
+	system.updateBoundaryForces(rigidBodies,tp, tempParams); 
+	//const int& testnum = (pbdWrapper.getSimulationModel().getRigidBodies())[0]->getGeometry().getVertexData().size();
+	START_TIMING("SimStep - PBD");
+	pbdWrapper.timeStep();
+	STOP_TIMING_AVG;
+
+	system.updateBoundaryParticles(rigidBodies,tp, tempParams);
 	//Render
 	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.numCloth, tp.triangles, cam);
 }

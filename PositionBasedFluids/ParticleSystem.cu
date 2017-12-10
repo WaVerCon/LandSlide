@@ -607,7 +607,7 @@ void setParams(solverParams *tempParams) {
 	clothDims = int(ceil(tempParams->numConstraints / blockSize + 0.5f)); 
 	gridDims = int(ceil(tempParams->gridSize / blockSize + 0.5f));
 
-	rigidParticleDims = int(ceil(tempParams->numRigidParticles / blockSize) + 0.5f));
+	rigidParticleDims = int(ceil(tempParams->numRigidParticles / blockSize + 0.5f));
 
 	cudaCheck(cudaMemcpyToSymbol(sp, tempParams, sizeof(solverParams)));
 }

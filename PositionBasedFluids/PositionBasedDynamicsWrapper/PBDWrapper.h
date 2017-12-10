@@ -1,7 +1,7 @@
 #ifndef __PBDWrapper_h__
 #define __PBDWrapper_h__
 
-#include "../SPlisHSPlasH/Common.h"
+#include <Common/Common.h>
 #include <string>
 #include<map>
 #include <Demos/Simulation/SimulationModel.h>
@@ -39,7 +39,7 @@ public:
 
 	/** Read rigid body scene and create the rigid body model
 	*/
-	void readScene(const std::string &sceneFileName,std::vector<std::string> &rigidBodyFileNames);
+	void readScene(const std::string &sceneFileName,std::vector<std::string>& rigidBodyFiles);
 	void initTriangleModelConstraints();
 	void initTetModelConstraints();
 

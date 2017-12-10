@@ -13,6 +13,7 @@
 using namespace std;
 using namespace Eigen;
 using namespace SPH;
+using namespace PBD;
 
 PoissonDiskSampling::PoissonDiskSampling() :
 	m_uniform_distribution1(0.0, 1.0)

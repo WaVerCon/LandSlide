@@ -3,12 +3,15 @@
 
 #include "common.h"
 #include "Shader.hpp"
+#include<Demos\Utils\Timing.h>
 #include "Camera.h"
+#include"PositionBasedDynamicsWrapper\PBDRigidBody.h"
 #include"Model.h"
+
 
 class Renderer {
 public:
-	Renderer();
+	Renderer(std::vector<PBD::RigidBody*> rigidBodies);
 	~Renderer();
 	void initVBOS(int numParticles, int numDiffuse, std::vector<int> triangles);
 	void run(int numParticles, int numDiffuse, int numCloth, std::vector<int> triangles, Camera &cam);
@@ -18,8 +21,14 @@ public:
 	GLuint indicesVBO;
 	GLuint diffusePosVBO;
 	GLuint diffuseVelVBO;
+	std::vector<GLuint> rigidBodyVAOs;
+	std::vector<GLuint> rigidBodyVBOs;
+	std::vector<GLuint> rigidBodyEBOs;
+	std::vector<PBD::RigidBody*> rigidBodies;
 
-	Shader slope;
+	Shader rigidBody;
+	Shader particle;
+	Shader quad;
 	//Shader rock;
 	Shader plane;
 	Shader cloth;
@@ -37,7 +46,9 @@ private:
 	void renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles, int numCloth);
 	void renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numDiffuse);
 	void renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numCloth, std::vector<int> triangles);
-	void renderObjects(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, std::vector<Model*>& models);
+	//void renderObjects(glm::mat4 &projection, glm::mat4 &mView, std::vector<Model*>& models);
+	void renderRigidBodies(glm::mat4 &projection, glm::mat4 &mView);
+	void renderSphere(const glm::mat4 &projection, const glm::mat4 &mView, Camera &cam, int numParticles, int numCloth);
 	void initFramebuffers();
 	void setInt(Shader &shader, const int &x, const GLchar* name);
 	void setFloat(Shader &shader, const float &x, const GLchar* name);
@@ -45,6 +56,8 @@ private:
 	void setVec3(Shader &shader, const glm::vec3 &v, const GLchar* name);
 	void setVec4(Shader &shader, const glm::vec4 &v, const GLchar* name);
 	void setMatrix(Shader &shader, const glm::mat4 &m, const GLchar* name);
+	void initRigidBodies();
+	
 };
 
 #endif

@@ -1,12 +1,12 @@
 #ifndef PoissonDiskSampling_H
 #define PoissonDiskSampling_H
 
-#include "../Common.h"
+#include <Common/Common.h>
 
 #include <random>
 #include <unordered_map>
 #include <string>
-
+using namespace PBD;
 namespace SPH
 {
 	/** \brief This class implements a Poisson disk sampling for the surface

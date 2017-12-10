@@ -1,13 +1,15 @@
 #ifndef __PartioReaderWriter_h__
 #define __PartioReaderWriter_h__
 
-#include "SPlisHSPlasH/Common.h"
+#include <Common/Common.h>
 #include <vector>
 
 namespace SPH
 {
 	/** \brief Class for reading and writing partio files.
 	*/
+	using PBD::Vector3r;
+	using PBD::Matrix3r; 
 	class PartioReaderWriter
 	{
 	public:

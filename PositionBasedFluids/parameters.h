@@ -2,8 +2,6 @@
 #define PARAMETERS_H
 
 #include "common.h"
-#include"SPlisHSPlasH\RigidBodyObject.h"
-#include"PositionBasedDynamicsWrapper\PBDRigidBody.h"
 
 struct tempSolver {
 	std::vector<float4> positions;
@@ -17,7 +15,7 @@ struct tempSolver {
 	std::vector<float> restLengths;
 	std::vector<float> stiffness;
 	std::vector<int> triangles;
-	std::vector<SPH::RigidBodyParticleObject> rigidBodies;//每个粒子所属的刚体
+	//std::vector<SPH::RigidBodyParticleObject> rigidBodies;//每个粒子所属的刚体
 	//std::vector<float> boundaryPsi;
 	//std::vector<float3> force;
 };

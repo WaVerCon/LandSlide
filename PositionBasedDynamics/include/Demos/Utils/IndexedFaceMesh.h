@@ -2,7 +2,7 @@
 #define __INDEXEDFACEMESH_H__
 
 #include <vector>
-#include "Common/Common.h"
+#include <Common\Common.h>
 #include <iterator>
 
 namespace PBD

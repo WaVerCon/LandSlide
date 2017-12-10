@@ -2,8 +2,9 @@
 #define __TriangleMesh_h__
 
 #include <vector>
-#include "SPlisHSPlasH/Common.h"
-
+#include <Common\Common.h>
+using PBD::Vector3r;
+using PBD::Vector2r;
 namespace SPH
 {
 	/** \brief Data structure for a triangle mesh with normals and vertex normals. 

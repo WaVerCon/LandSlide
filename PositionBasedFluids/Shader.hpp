@@ -11,6 +11,7 @@
 class Shader {
 public:
 	GLuint program, tex, tex2, fbo, vao, vbo, ebo;
+	GLuint rbo;//render buffer object
 
 	Shader(const GLchar* vertexPath, const GLchar* fragmentPath) {
 		std::string vertexCode;
@@ -101,6 +102,11 @@ public:
 		glGenFramebuffers(1, &fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	}
+	void initRenderBuffer(int width, int height, GLenum internalFormat, GLuint &buf) {
+		glGenRenderbuffers(1, &buf);
+		glBindRenderbuffer(GL_RENDERBUFFER, buf);
+		glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height);
+	}
 
 	void initTexture(int width, int height, GLenum format, GLenum internalFormat, GLuint &tex) {
 		glGenTextures(1, &tex);
@@ -142,7 +148,7 @@ public:
 		};
 
 		glBindVertexArray(vao);
-		
+
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 

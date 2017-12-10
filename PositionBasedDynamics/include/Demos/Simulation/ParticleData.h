@@ -12,7 +12,7 @@ namespace PBD
 	*/
 	class VertexData
 	{
-	private:
+	public:
 		std::vector<Vector3r> m_x;
 
 	public:

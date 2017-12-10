@@ -1,5 +1,4 @@
-#ifndef COMMON_H
-#define COMMON_H
+#pragma once
 
 #define PI 3.14159265358979323846f
 
@@ -21,6 +20,7 @@
 #include <vector>
 #include<string>
 #include <Windows.h>
-#include"SPlisHSPlasH\TimeManager.h"
 
-#endif
+
+
+

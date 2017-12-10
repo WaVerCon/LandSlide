@@ -1,13 +1,16 @@
 #ifndef __PBDRigidBody_h__
 #define __PBDRigidBody_h__
 
-#include "SPlisHSPlasH/Common.h"
+#include <Common\Common.h>
 #include "SPlisHSPlasH/RigidBodyObject.h"
 #include "Demos/Simulation/RigidBody.h"
-#include "SPlisHSPlasH/TimeManager.h"
+#include <Demos\Simulation\TimeManager.h>
 
 namespace SPH 
-{	
+{
+	using PBD::Vector2r;
+	using PBD::Vector3r;
+	using PBD::Matrix3r;
 	class PBDRigidBody : public RigidBodyObject 
 	{
 	protected: 
@@ -17,7 +20,7 @@ namespace SPH
 	public:
 		PBDRigidBody(PBD::RigidBody *rigidBody) : m_rigidBody(rigidBody), m_h(0.0) {}
 
-		void updateTimeStepSize() { m_h = TimeManager::getCurrent()->getTimeStepSize(); }
+		void updateTimeStepSize() { m_h = PBD::TimeManager::getCurrent()->getTimeStepSize(); }
 
 		virtual bool isDynamic() const { return m_rigidBody->getMass() != 0.0; }
 

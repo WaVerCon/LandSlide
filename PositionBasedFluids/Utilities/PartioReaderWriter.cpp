@@ -1,5 +1,6 @@
+
 #include "PartioReaderWriter.h"
-#include "extern/partio/src/lib/Partio.h"
+#include <partio/src/lib/Partio.h>
 #include "FileSystem.h"
 
 using namespace SPH;

@@ -2,8 +2,11 @@
 #define _CONSTRAINTS_H
 
 #include "Common/Common.h"
+#include <algorithm>
 #define _USE_MATH_DEFINES
 #include "math.h"
+#define max(a,b) std::max(a,b)
+#define min(a,b) std::min(a,b)
 
 namespace PBD
 {
@@ -153,8 +156,8 @@ namespace PBD
 		void setTargetAngle(const Real val) 
 		{ 
 			const Real pi = (Real)M_PI;
-			m_targetAngle = std::max(val, -pi);
-			m_targetAngle = std::min(m_targetAngle, pi);
+			m_targetAngle =max(val, -pi);
+			m_targetAngle = min(m_targetAngle, pi);
 		}
 
 		bool initConstraint(SimulationModel &model, const unsigned int rbIndex1, const unsigned int rbIndex2, const Vector3r &pos, const Vector3r &axis);

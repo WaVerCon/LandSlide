@@ -3,27 +3,25 @@
 
 #include "common.h"
 #include "parameters.h"
+
 #include"Utilities\FileSystem.h"
-#include "SPlisHSPlasH/Common.h"
-#include "SPlisHSPlasH/TimeManager.h"
-#include <Eigen/Dense>
+#include <Common/Common.h>
+#include <Demos\Simulation\TimeManager.h>
 #include <iostream>
-#include "SPlisHSPlasH/Utilities/Timing.h"
+#include <Demos\Utils\Timing.h>
 #include "Utilities/PartioReaderWriter.h"
 #include "PositionBasedDynamicsWrapper/PBDRigidBody.h"
 #include "SPlisHSPlasH/Utilities/PoissonDiskSampling.h"
 #include "PositionBasedDynamicsWrapper/PBDWrapper.h"
-#include "Utilities/FileSystem.h"
 
 using namespace SPH;
-
+/*
 void addRigidParticles(RigidBodyObject * rbo,tempSolver* s, const std::vector<SPH::Vector3r> & rigidParticles,float invMass=0.05,int phase=1){
 	for (unsigned int i = 0; i < rigidParticles.size(); ++i){
 		float3 pos = make_float3(rigidParticles[i].x, rigidParticles[i].y, rigidParticles[i].z);
 		s->positions.push_back(make_float4(pos, invMass));
 		s->velocities.push_back(make_float3(0));
 		s->phases.push_back(phase);
-		
 
 		//s->force.push_back(make_float3(0));
 	}
@@ -40,30 +38,25 @@ void initBoundaryParticles(tempSolver* s,solverParams* sp){
 	{
 		SPH::RigidBodyParticleObject rbpo = s->rigidBodies[i];
 		SPH::RigidBodyObject *rbo = rbpo.rigidBody;
-		if (rbo->isDynamic())
-		{
-
-			for (unsigned int j = 0; j < rbpo.numberOfParticles; ++j){
-				unsigned int idx = pindex + j;
-				SPH::Vector3r pos = rbo->getRotation() * SPH::Vector3r(s->positions[idx].x, s->positions[idx].y, s->positions[idx].z) + rbo->getPosition();
-				s->positions[idx] = make_float4(pos.x, pos.y, pos.z, s->positions[idx].w);
-				SPH::Vector3r vel = rbo->getAngularVelocity().cross(SPH::Vector3r(s->positions[idx].x, s->positions[idx].y, s->positions[idx].z) - rbo->getPosition()) + rbo->getVelocity();
-				s->velocities[idx] = make_float3(vel.x, vel.y, vel.z);
-			}
-
+		for (unsigned int j = 0; j < rbpo.numberOfParticles; ++j){
+			unsigned int idx = pindex + j;
+			PBD::Vector3r pos = rbo->getRotation() * PBD::Vector3r(s->positions[idx].x, s->positions[idx].y, s->positions[idx].z) + rbo->getPosition();
+			s->positions[idx] = make_float4(pos.x, pos.y, pos.z, s->positions[idx].w);
+			PBD::Vector3r vel = rbo->getAngularVelocity().cross(SPH::Vector3r(s->positions[idx].x, s->positions[idx].y, s->positions[idx].z) - rbo->getPosition()) + rbo->getVelocity();
+			s->velocities[idx] = make_float3(vel.x, vel.y, vel.z);
 		}
 		pindex += rbpo.numberOfParticles;
 	}
 }
 void initRigidBodies(PBDWrapper& pbdWrapper, tempSolver* s, solverParams* sp, std::vector<string> objFiles, const SPH::Vector3r& particleTranslation, const SPH::Matrix3r& particleRotation, Real scale=1.0,Real particleRadius=0.1){
-	std::string base_path = "Scenes/";
+	//std::string base_path = FileSystem::getProgramPath();
 	const bool useCache = true;
 	for (unsigned int i = 0; i < objFiles.size(); ++i){
 		std::vector<SPH::Vector3r> rigidParticles;
 		std::string mesh_base_path = FileSystem::getFilePath(objFiles[i]);
 		std::string mesh_file_name = FileSystem::getFileName(objFiles[i]);
 		std::string scene_file_name = "LandSlide";
-		std::string cachePath =base_path+ "/" + mesh_base_path + "/Cache";
+		std::string cachePath = mesh_base_path + "/Cache";
 		std::string particleFileName = FileSystem::normalizePath(cachePath + "/" + scene_file_name + "_" + mesh_file_name + "_" + std::to_string(i) + ".bgeo");
 
 		PBD::SimulationModel &model = pbdWrapper.getSimulationModel();
@@ -106,7 +99,7 @@ void initRigidBodies(PBDWrapper& pbdWrapper, tempSolver* s, solverParams* sp, st
 
 	initBoundaryParticles(s,sp);
 }
-
+*/
 void createParticleGrid(tempSolver* s, solverParams* sp, float3 lower, int3 dims, float radius) {
 	for (int x = 0; x < dims.x; x++) {
 		for (int y = 0; y < dims.y; y++) {

@@ -101,60 +101,60 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 		cudaCheck(cudaMemcpy(s->stiffness, &tp.stiffness[0], tempParams.numConstraints * sizeof(int), cudaMemcpyHostToDevice));
 	setParams(&tempParams);
 }
-void ParticleSystem::updateBoundaryParticles(const tempSolver &tp, solverParams &params)//对刚体粒子的velocity，直接使用计算结果进行替代，而不累加
+void ParticleSystem::updateBoundaryParticles(std::vector<SPH::RigidBodyParticleObject*> rigidBodies, const tempSolver &tp, solverParams &params)//对刚体粒子的velocity，直接使用计算结果进行替代，而不累加
 {
 	const unsigned int nObjects = params.numRigidBody;
 	int pindex = 0;
 	cudaCheck(cudaMemcpy(s->rigidPosPinned, s->newPos, params.numRigidParticles*sizeof(float4), cudaMemcpyDeviceToHost));
 	for (unsigned int i = 0; i < nObjects; i++)
 	{
-		SPH::RigidBodyParticleObject rbpo = tp.rigidBodies[i];
-		SPH::RigidBodyObject *rbo = rbpo.rigidBody;
+		SPH::RigidBodyParticleObject* rbpo = rigidBodies[i];
+		SPH::RigidBodyObject *rbo = rbpo->rigidBody;
 		if (rbo->isDynamic())
 		{
-			for (unsigned int j = 0; j < rbpo.numberOfParticles; ++j){
+			for (unsigned int j = 0; j < rbpo->numberOfParticles; ++j){
 				unsigned int idx = pindex + j;
-				SPH::Vector3r pos = rbo->getRotation() * SPH::Vector3r(s->rigidPosPinned[idx].x, s->rigidPosPinned[idx].y, s->rigidPosPinned[idx].z) + rbo->getPosition();
-				s->rigidPosPinned[idx] = make_float4(pos.x, pos.y, pos.z, s->rigidPosPinned[idx].w);
-				SPH::Vector3r vel = rbo->getAngularVelocity().cross(SPH::Vector3r(s->rigidPosPinned[idx].x, s->rigidPosPinned[idx].y, s->rigidPosPinned[idx].z) - rbo->getPosition()) + rbo->getVelocity();
-				s->rigidVelPinned[idx] = make_float3(vel.x, vel.y, vel.z);
+				PBD::Vector3r pos = rbo->getRotation() *rbpo->x0[j] + rbo->getPosition();
+				s->rigidPosPinned[idx] = make_float4(pos.x(), pos.y(), pos.z(), s->rigidPosPinned[idx].w);
+				PBD::Vector3r vel = rbo->getAngularVelocity().cross(PBD::Vector3r(s->rigidPosPinned[idx].x, s->rigidPosPinned[idx].y, s->rigidPosPinned[idx].z) - rbo->getPosition()) + rbo->getVelocity();
+				s->rigidVelPinned[idx] = make_float3(vel.x(), vel.y(), vel.z());
 			}
 		}
-		pindex += rbpo.numberOfParticles;
+		pindex += rbpo->numberOfParticles;
 	}
 	cudaCheck(cudaMemcpy(s->oldPos, s->rigidPosPinned, params.numRigidParticles*sizeof(float4), cudaMemcpyHostToDevice));
 	cudaCheck(cudaMemcpy(s->newPos, s->rigidPosPinned, params.numRigidParticles*sizeof(float4), cudaMemcpyHostToDevice));
 	cudaCheck(cudaMemcpy(s->velocities, s->rigidVelPinned, params.numRigidParticles*sizeof(float3), cudaMemcpyHostToDevice));
 }
-void ParticleSystem::updateBoundaryForces(tempSolver &tp, solverParams &tempParams){
-	Real h = SPH::TimeManager::getCurrent()->getTimeStepSize();
+void ParticleSystem::updateBoundaryForces(std::vector<SPH::RigidBodyParticleObject*>rigidBodies ,tempSolver &tp, solverParams &tempParams){
+	Real h =PBD::TimeManager::getCurrent()->getTimeStepSize();
 	const unsigned int nObjects = tempParams.numRigidBody;
 	int pindex = 0;
 	cudaCheck(cudaMemcpy(s->rigidForcePinned, s->forces, tempParams.numRigidParticles*sizeof(float3), cudaMemcpyDeviceToHost));
 	for (unsigned int i = 0; i < nObjects; i++)
 	{
-		SPH::RigidBodyParticleObject rbpo = tp.rigidBodies[i];
-		SPH::RigidBodyObject *rbo = rbpo.rigidBody;
+		SPH::RigidBodyParticleObject* rbpo = rigidBodies[i];
+		SPH::RigidBodyObject *rbo = rbpo->rigidBody;
 		if (rbo->isDynamic())
 		{
 			((SPH::PBDRigidBody*)rbo)->updateTimeStepSize();
-			SPH::Vector3r force, torque;
+			PBD::Vector3r force, torque;
 			force.setZero();
 			torque.setZero();
 			
-			for (int j = 0; j < rbpo.numberOfParticles; j++)
+			for (int j = 0; j < rbpo->numberOfParticles; j++)
 			{
 				unsigned int idx = pindex + j;
-				SPH::Vector3r m_f = SPH::Vector3r(s->rigidForcePinned[idx].x, s->rigidForcePinned[idx].y, s->rigidForcePinned[idx].z);
+				PBD::Vector3r m_f = PBD::Vector3r(s->rigidForcePinned[idx].x, s->rigidForcePinned[idx].y, s->rigidForcePinned[idx].z);
 				force += m_f;
-				SPH::Vector3r pos = SPH::Vector3r(s->rigidPosPinned[idx].x, s->rigidPosPinned[idx].y, s->rigidPosPinned[idx].z);
+				PBD::Vector3r pos = PBD::Vector3r(s->rigidPosPinned[idx].x, s->rigidPosPinned[idx].y, s->rigidPosPinned[idx].z);
 				torque += (pos - rbo->getPosition()).cross(m_f);
 				s->rigidForcePinned[idx] = make_float3(0);
 			}
 			rbo->addForce(force);
 			rbo->addTorque(torque);
 		}
-		pindex += rbpo.numberOfParticles;
+		pindex += rbpo->numberOfParticles;
 	}
 	cudaCheck(cudaMemcpy(s->forces, s->rigidForcePinned, tempParams.numRigidParticles*sizeof(float3),cudaMemcpyHostToDevice));
 }

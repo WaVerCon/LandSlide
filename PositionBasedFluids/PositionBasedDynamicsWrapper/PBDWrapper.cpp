@@ -5,8 +5,8 @@
 #include <Demos/Utils/SceneLoader.h>
 #include <Demos/Utils/TetGenLoader.h>
 #include <Demos/Utils/Utilities.h>
-#include "../SPlisHSPlasH/TimeManager.h"
-#include "../SPlisHSPlasH/Utilities/Timing.h"
+#include <Demos\Utils\Timing.h>
+#include<Demos/Simulation/TimeManager.h>
 
 #define _USE_MATH_DEFINES
 #include "math.h"
@@ -35,7 +35,8 @@ PBDWrapper::PBDWrapper()
 
 PBDWrapper::~PBDWrapper()
 {
-	delete SPH::TimeManager::getCurrent();
+	
+	delete PBD::TimeManager::getCurrent();
 }
 
 
@@ -50,9 +51,10 @@ PBDWrapper::~PBDWrapper()
 
  void PBDWrapper::timeStep()
  {
+	
 	PBD::ParticleData &pd = m_model.getParticles();
 	PBD::SimulationModel::RigidBodyVector &rb = m_model.getRigidBodies();
-	SPH::TimeManager::getCurrent()->setTimeStepSize(SPH::TimeManager::getCurrent()->getTimeStepSize());
+	PBD::TimeManager::getCurrent()->setTimeStepSize(PBD::TimeManager::getCurrent()->getTimeStepSize());
 
 	m_sim.step(m_model);
 
@@ -83,7 +85,7 @@ void PBDWrapper::updateVisModels()
 	}
 }
 
-void PBDWrapper::readScene(const std::string &sceneFileName, std::vector<std::string> &rigidBodyFileNames)
+void PBDWrapper::readScene(const std::string &sceneFileName,std::vector<std::string> &rigidBodyFiles)
 {
 	m_sceneFileName = sceneFileName;
 
@@ -102,6 +104,7 @@ void PBDWrapper::readScene(const std::string &sceneFileName, std::vector<std::st
 	m_sceneName = data.m_sceneName;
 
 	m_sim.setGravity(data.m_gravity);
+	//m_sim.setGravity(PBD::Vector3r(0,-0.1,0));
 	m_sim.setMaxIterations(data.m_maxIter);
 	m_sim.setMaxIterationsV(data.m_maxIterVel);
 	m_sim.setVelocityUpdateMethod(data.m_velocityUpdateMethod);
@@ -142,8 +145,9 @@ void PBDWrapper::readScene(const std::string &sceneFileName, std::vector<std::st
 			PBD::VertexData vd;
 			PBD::OBJLoader::loadObj(PBD::Utilities::normalizePath(rbd.m_modelFile), vd, mesh);
 			objFiles[rbd.m_modelFile] = { vd, mesh };
-			rigidBodyFileNames.push_back(rbd.m_modelFile);
+			
 		}
+		rigidBodyFiles.push_back(rbd.m_modelFile);//scene_file_path+geometryFileName
 	}
 
 	for (unsigned int i = 0; i < data.m_tetModelData.size(); i++)
@@ -452,7 +456,7 @@ void PBDWrapper::readScene(const std::string &sceneFileName, std::vector<std::st
 
 void PBDWrapper::initModel (const Real timeStepSize)
 {
-	SPH::TimeManager::getCurrent ()->setTimeStepSize(timeStepSize);
+	PBD::TimeManager::getCurrent ()->setTimeStepSize(timeStepSize);
 
 	m_sim.setCollisionDetection(m_model, &m_cd);
 }

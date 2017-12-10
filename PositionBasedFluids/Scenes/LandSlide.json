@@ -1,7 +1,7 @@
 {
 	"Configuration": 
 	{
-		"particleRadius": 0.025
+		"particleRadius": 0.1
 	},
 	"Simulation": 
 	{
@@ -30,22 +30,38 @@
 		"solid_normalizeShear": 0
 	},
 	"RigidBodies": [
-		{
-			"id": 1,
-			"geometryFile": "../models/Slope.obj",
-			"translation": [0,4,0],
-			"rotationAxis": [1, 0, 0],
-			"rotationAngle": 0,
-			"scale": [3.1, 8, 1.6],
-			"color": [0.1, 0.4, 0.6, 1.0], 
-			"isDynamic": false,
-			"isWall": true,
-			"restitution" : 0.6,
-			"friction" : 0.0,
-			"collisionObjectType": 2,
-			"collisionObjectScale": [3.1, 8, 1.6],	
-			"invertSDF": true
-		}
+    {
+      "id": 1,
+      "density": 100,
+      "geometryFile": "../Resources/Models/cube.obj",
+      "translation": [ 0, 3, 0 ],
+      "rotationAxis": [ 1, 0, 0 ],
+      "rotationAngle": 0,
+      "scale": [ 4, 1, 1 ],
+      "color": [ 0.1, 0.4, 0.6, 1.0 ],
+      "isDynamic": true,
+      "restitution": 0.6,
+      "friction": 0.5,
+      "collisionObjectType": 2,
+      "collisionObjectScale": [ 1, 1, 1 ],
+      "invertSDF": false
+    },
+        {
+      "id": 2,
+      "density": 100,
+      "geometryFile": "../Resources/Models/cube.obj",
+      "translation": [ 0, 0.5, 0 ],
+      "rotationAxis": [ 1, 0, 0 ],
+      "rotationAngle": 0,
+      "scale": [ 4, 1,4 ],
+      "color": [ 0.1, 0.4, 0.6, 1.0 ],
+      "isDynamic": false,
+      "restitution": 0.6,
+      "friction": 0.5,
+      "collisionObjectType": 2,
+      "collisionObjectScale": [ 4, 1, 4 ],
+      "invertSDF":false
+    }
 	]	
 }
 

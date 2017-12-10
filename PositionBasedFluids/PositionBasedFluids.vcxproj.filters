@@ -72,9 +72,6 @@
     <Filter Include="Header Files\cudaMath">
       <UniqueIdentifier>{8a7b7d95-be78-4f0b-9a7b-c3eab3c382dc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="screenshots">
-      <UniqueIdentifier>{62bffc6b-6130-4266-9f57-37ef967baca0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders\model">
       <UniqueIdentifier>{a9d74885-eb78-4405-a445-4170ad33b5a4}</UniqueIdentifier>
     </Filter>
@@ -87,14 +84,20 @@
     <Filter Include="Source Files\PBDWrapper">
       <UniqueIdentifier>{87812865-d0fb-4327-9568-f760f4ef48d4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="shaders\PBDUtilities">
-      <UniqueIdentifier>{a9c35a22-cddb-48db-ace3-b9cedeffc68b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="scenes">
       <UniqueIdentifier>{630b3291-db13-4546-9dc2-bea548b2dd0b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Utilities">
       <UniqueIdentifier>{1bb6808c-817c-43e6-8b06-76e89b5bed2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\PBDUtilities">
+      <UniqueIdentifier>{a9c35a22-cddb-48db-ace3-b9cedeffc68b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\particle">
+      <UniqueIdentifier>{9812e510-b71c-41e5-a9d2-b60c88b9217f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\rigidBody">
+      <UniqueIdentifier>{d11915f5-284e-48e7-b7a6-5310a0827ad8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -110,22 +113,19 @@
     <ClCompile Include="Utilities\PartioReaderWriter.cpp">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities\StringTools.cpp">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="PositionBasedDynamicsWrapper\PBDWrapper.cpp">
       <Filter>Source Files\PBDWrapper</Filter>
     </ClCompile>
     <ClCompile Include="SPlisHSPlasH\TriangleMesh.cpp">
       <Filter>Source Files\PBDWrapper</Filter>
     </ClCompile>
-    <ClCompile Include="SPlisHSPlasH\TimeManager.cpp">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="SPlisHSPlasH\Utilities\Timing.cpp">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="SPlisHSPlasH\Utilities\PoissonDiskSampling.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\FileSystem.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\StringTools.cpp">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
@@ -178,50 +178,41 @@
     <ClInclude Include="SPlisHSPlasH\TriangleMesh.h">
       <Filter>Header Files\PBDWrapper</Filter>
     </ClInclude>
-    <ClInclude Include="SPlisHSPlasH\Common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SPlisHSPlasH\Utilities\PoissonDiskSampling.h">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="SPlisHSPlasH\TimeManager.h">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="SPlisHSPlasH\Utilities\Timing.h">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\OBJLoader.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Hashmap.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\IndexedFaceMesh.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\IndexedTetMesh.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\ObjectArray.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\SceneLoader.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\TetGenLoader.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Timing.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Utilities.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\VolumeIntegration.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="..\PositionBasedDynamics\include\Demos\Utils\Config.h">
-      <Filter>shaders\PBDUtilities</Filter>
+      <Filter>Header Files\PBDUtilities</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
       <Filter>Header Files\rendering</Filter>
@@ -231,6 +222,15 @@
     </ClInclude>
     <ClInclude Include="Model.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\FileSystem.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PositionBasedDynamics\include\Common\Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\StringTools.h">
+      <Filter>Header Files\Utilities</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -303,20 +303,33 @@
     <None Include="model.frag">
       <Filter>shaders\model</Filter>
     </None>
-    <None Include="model.vs">
-      <Filter>shaders\model</Filter>
-    </None>
     <None Include="Scenes\LandSlide.json">
       <Filter>scenes</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="fluid.png">
-      <Filter>screenshots</Filter>
-    </Image>
-    <Image Include="cloth.png">
-      <Filter>screenshots</Filter>
-    </Image>
+    <None Include="Shaders\canvas.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="Shaders\canvas.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="model.vert">
+      <Filter>shaders\model</Filter>
+    </None>
+    <None Include="Shaders\vs_smooth.glsl">
+      <Filter>shaders\rigidBody</Filter>
+    </None>
+    <None Include="Shaders\fs_smooth.glsl">
+      <Filter>shaders\rigidBody</Filter>
+    </None>
+    <None Include="Shaders\fs_points.glsl">
+      <Filter>shaders\particle</Filter>
+    </None>
+    <None Include="Shaders\vs_points.glsl">
+      <Filter>shaders\particle</Filter>
+    </None>
+    <None Include="Scenes\Collision.json">
+      <Filter>scenes</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="ParticleSystem.cu">

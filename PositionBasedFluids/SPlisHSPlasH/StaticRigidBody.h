@@ -1,10 +1,10 @@
 #ifndef __StaticRigidBody_h__
 #define __StaticRigidBody_h__
 
-#include "Common.h"
+#include <Common/Common.h>
 #include "RigidBodyObject.h"
 #include "TriangleMesh.h"
-
+using PBD::Matrix3r;
 namespace SPH 
 {	
 	/** \brief This class stores the information of a static rigid body which 

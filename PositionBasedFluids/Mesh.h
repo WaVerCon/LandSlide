@@ -76,7 +76,7 @@ public:
 		}
 
 		// Also set each mesh's shininess property to a default value (if you want you could extend this to another mesh property and possibly change this value)
-		glUniform1f(glGetUniformLocation(shader.program, "material.shininess"), 16.0f);
+		glUniform1f(glGetUniformLocation(shader.program, "shininess"), 16.0f);
 
 		// Draw mesh
 		glBindVertexArray(this->VAO);
