@@ -587,18 +587,18 @@ void update(solver* s, solverParams* sp) {
 	clearGrid<<<gridDims, blockSize>>>(s->gridCounters);
 	updateGrid<<<dims, blockSize>>>(s->newPos, s->gridCells, s->gridCounters);
 	updateNeighbors<<<dims, blockSize>>>(s->newPos, s->phases, s->gridCells, s->gridCounters, s->neighbors, s->numNeighbors, s->contacts, s->numContacts);
-
+	/*
 	for (int i = 0; i < sp->numIterations; i++) {
 		clearDeltaP<<<dims, blockSize>>>(s->deltaPs, s->buffer0);
-		particleCollisions<<<dims, blockSize>>>(s->newPos, s->contacts, s->numContacts, s->deltaPs, s->buffer0);
+		particleCollisions<<<dims, blockSize>>>(s->newPos, s->contacts, s->numContacts, s->deltaPs, s->buffer0);这个方法对流体粒子和固体粒子直接应用碰撞后的位移变化
 		applyDeltaP<<<dims, blockSize>>>(s->newPos, s->deltaPs, s->buffer0, 1);
 	}
-
+	*/
 	//Solve constraints
 	updateWater(s, sp->numIterations);
 	thrust::device_ptr<float4> devPtr = thrust::device_pointer_cast(s->diffusePos);
 	thrust::sort(devPtr, devPtr + sp->numDiffuse, OBCmp());
-	updateCloth(s, sp->numIterations);
+	//updateCloth(s, sp->numIterations);
 }
 
 void setParams(solverParams *tempParams) {

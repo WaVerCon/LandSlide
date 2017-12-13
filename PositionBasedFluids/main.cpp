@@ -183,8 +183,8 @@ void initializeState(Scene& scene,ParticleSystem &system, tempSolver &tp, solver
 	//FluidCloth scene("FluidCloth");
 	scene.init(&tp, &tempParams);
 	system.initialize(tp, tempParams);
-	//PBD::TimeManager::getCurrent()->setTimeStepSize(0.0083f);//set initial timestep
-	PBD::TimeManager::getCurrent()->setTimeStepSize(0.00083f);
+	PBD::TimeManager::getCurrent()->setTimeStepSize(0.0083f);//set initial timestep
+	//PBD::TimeManager::getCurrent()->setTimeStepSize(0.00083f);
 }
 
 void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolver &tp, solverParams &tempParams,LandSlide &scene) {
@@ -194,7 +194,7 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolve
 	std::vector<SPH::RigidBodyParticleObject*> rigidBodies = scene.getRigidBodies();
 
 	//Step physics
-	//system.updateWrapper(tempParams);
+	system.updateWrapper(tempParams);
 
 	//Update the VBO
 	void* positionsPtr;
@@ -214,12 +214,12 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolve
 	cudaCheck(cudaMemcpy(tmp.data(), positionsPtr, tempParams.numParticles * sizeof(float4), cudaMemcpyDeviceToHost));*/
 
 	system.updateBoundaryForces(rigidBodies,tp, tempParams); 
-	//const int& testnum = (pbdWrapper.getSimulationModel().getRigidBodies())[0]->getGeometry().getVertexData().size();
+	
 	START_TIMING("SimStep - PBD");
 	pbdWrapper.timeStep();
 	STOP_TIMING_AVG;
 
 	system.updateBoundaryParticles(rigidBodies,tp, tempParams);
 	//Render
-	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.numCloth, tp.triangles, cam);
+	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.numRigidParticles, tp.triangles, cam);
 }

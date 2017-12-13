@@ -164,6 +164,9 @@ void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> t
 	renderRigidBodies(projection, mView);
 
 	//--------------------RIGIDBODY_PARTICLES-----------------
+	//renderSphere(projection, mView, cam, numParticles, numCloth);
+
+	//--------------------FLUID_PARTICLES------------------
 	renderSphere(projection, mView, cam, numParticles, numCloth);
 
 	glUseProgram(quad.program);
@@ -187,36 +190,36 @@ void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> t
 	//renderFoam(projection, mView, cam, numDiffuse);
 
 	//--------------------Final - WATER & DIFFUSE-------------------------
-	/*
-	glUseProgram(finalFS.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//
+	//glUseProgram(finalFS.program);
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	finalFS.shaderVAOQuad();
+	//finalFS.shaderVAOQuad();
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, fluidFinal.tex);
-	GLint fluidMap = glGetUniformLocation(finalFS.program, "fluidMap");
-	glUniform1i(fluidMap, 0);
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, fluidFinal.tex);
+	//GLint fluidMap = glGetUniformLocation(finalFS.program, "fluidMap");
+	//glUniform1i(fluidMap, 0);
 
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, foamIntensity.tex);
-	GLint foamIntensityMap = glGetUniformLocation(finalFS.program, "foamIntensityMap");
-	glUniform1i(foamIntensityMap, 1);
+	//glActiveTexture(GL_TEXTURE1);
+	//glBindTexture(GL_TEXTURE_2D, foamIntensity.tex);
+	//GLint foamIntensityMap = glGetUniformLocation(finalFS.program, "foamIntensityMap");
+	//glUniform1i(foamIntensityMap, 1);
 
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, foamRadiance.tex);
-	GLint foamRadianceMap = glGetUniformLocation(finalFS.program, "foamRadianceMap");
-	glUniform1i(foamRadianceMap, 2);
+	//glActiveTexture(GL_TEXTURE2);
+	//glBindTexture(GL_TEXTURE_2D, foamRadiance.tex);
+	//GLint foamRadianceMap = glGetUniformLocation(finalFS.program, "foamRadianceMap");
+	//glUniform1i(foamRadianceMap, 2);
 
-	setVec2(foamRadiance, screenSize, "screenSize");
+	//setVec2(foamRadiance, screenSize, "screenSize");
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	//glEnable(GL_DEPTH_TEST);
+	//glDepthMask(GL_TRUE);
 
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	*/
+	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	
 }
 
 void Renderer::initFramebuffers() {
@@ -667,6 +670,7 @@ void Renderer::renderSphere(const glm::mat4 &projection, const glm::mat4 &mView,
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	setFloat(particle, (float)viewport[2], "viewport_width");
+	float particleRadius = radius*0.1f;
 	setFloat(particle, radius, "radius");
 	setVec3(particle, glm::vec3(fluidColor[0], fluidColor[1], fluidColor[2]), "color");
 
@@ -682,17 +686,12 @@ void Renderer::renderSphere(const glm::mat4 &projection, const glm::mat4 &mView,
 	glPointParameterf(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
 	//glClear(GL_DEPTH_BUFFER_BIT);
 
-	/*GLuint testvbo;
-	glGenBuffers(1, &testvbo);
-	glBindBuffer(GL_ARRAY_BUFFER, testvbo);
-	float tmp[] = { 0,2,0,1 };
-	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(float), tmp, GL_DYNAMIC_DRAW);*/
 
 	particle.bindPositionVAO(positionVBO, numCloth);
-
+	//particle.bindPositionVAO(positionVBO, 0);
 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
-	//glDrawArrays(GL_POINTS, 0, 1);
+	//glDrawArrays(GL_POINTS, 0, numCloth);
 	
 	glBindVertexArray(0);
 	glUseProgram(0);

@@ -47,6 +47,7 @@ private:
 	void renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numDiffuse);
 	void renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numCloth, std::vector<int> triangles);
 	//void renderObjects(glm::mat4 &projection, glm::mat4 &mView, std::vector<Model*>& models);
+
 	void renderRigidBodies(glm::mat4 &projection, glm::mat4 &mView);
 	void renderSphere(const glm::mat4 &projection, const glm::mat4 &mView, Camera &cam, int numParticles, int numCloth);
 	void initFramebuffers();

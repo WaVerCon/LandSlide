@@ -116,7 +116,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\OpenGL\GLEW\lib\Release\x64;C:\OpenGL\GLFW\lib-msvc120;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32s.lib;DevIL.lib;ILU.lib;ILUT.lib;cudart.lib;assimpd.lib;SOIL.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;PositionBasedDynamics_d.lib;Simulation_d.lib;Utils_d.lib;partio_d.lib;zlib_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32s.lib;DevIL.lib;ILU.lib;ILUT.lib;cudart.lib;assimpd.lib;SOIL.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;PositionBasedDynamics_d.lib;Simulation_d.lib;Utils_d.lib;partio_d.lib;zlib_d.lib;freeglut_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/VERBOSE %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <CudaCompile>

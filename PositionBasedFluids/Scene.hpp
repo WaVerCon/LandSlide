@@ -146,8 +146,11 @@ public:
 	void init(tempSolver* tp, solverParams* sp) {
 		const float radius = 0.1f;
 		const float restDistance = radius * 0.5f;
-		float3 lower = make_float3(0.0f, 0.1f, 0.0f);
-		int3 dims = make_int3(68, 48, 88);
+		/*float3 lower = make_float3(-0.5f,10.0f, -0.5f);
+		int3 dims = make_int3(10, 10, 10);*/
+		
+
+		
 		scene_file = "Scenes/LandSlide.json";
 		std::vector<string> rigidBodyFiles;
 		sp->numRigidBody = 0;
@@ -156,11 +159,17 @@ public:
 		pbdWrapper.readScene(scene_file,rigidBodyFiles);
 		pbdWrapper.initModel(TimeManager::getCurrent()->getTimeStepSize());
 		
-		initRigidBodies(pbdWrapper, tp, sp, rigidBodyFiles, Vector3r::Zero(), Matrix3r::Identity());
+		initRigidBodies(pbdWrapper, tp, sp, rigidBodyFiles, Vector3r::Zero(), Matrix3r::Identity(),1.0,radius);
 
 
 		sp->numRigidParticles = tp->positions.size();
 		//createBodyModel();
+
+		float3 lower = make_float3(0.0f, 3.0f, 0.0f);
+		int3 dims = make_int3(10, 10, 10);
+		createParticleGrid(tp, sp, lower, dims, restDistance);
+
+
 
 		sp->radius = radius;
 		sp->restDistance = restDistance;
@@ -449,7 +458,7 @@ private:
 			for (unsigned int j = 0; j < rigidParticles.size(); j++)
 				rigidParticles[j] = rb->getRotation().transpose() * (rigidParticles[j] - rb->getPosition());
 			if (!rb->isDynamic())
-				addRigidParticles(rb, s, rigidParticles, 0.0f, 2);
+				addRigidParticles(rb, s, rigidParticles, 0.0f);
 			else
 				addRigidParticles(rb, s, rigidParticles);
 			sp->numRigidBody++;
