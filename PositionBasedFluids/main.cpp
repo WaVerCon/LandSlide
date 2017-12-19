@@ -31,6 +31,8 @@ static float lastFrame = 0.0f;
 static int w = 0;
 static bool ss = false;
 
+static bool running = false;//step start or not
+
 void initializeState(Scene &scene,ParticleSystem &system, tempSolver &tp, solverParams &tempParams);
 void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam);
 //void saveVideo();
@@ -138,8 +140,10 @@ void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam) {
 	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
 		system.running = false;
 
-	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
-		system.running = true;
+	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
+		running = !running;
+		system.running = !system.running;
+	}
 
 	if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
 		system.moveWall = true;
@@ -188,38 +192,46 @@ void initializeState(Scene& scene,ParticleSystem &system, tempSolver &tp, solver
 }
 
 void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolver &tp, solverParams &tempParams,LandSlide &scene) {
-	PBDWrapper& pbdWrapper = scene.getPBDWrapper();
-	std::vector<PBD::RigidBody *> bodies = pbdWrapper.getSimulationModel().getRigidBodies();
-	//std::vector<Model*> models = scene.getModels();
-	std::vector<SPH::RigidBodyParticleObject*> rigidBodies = scene.getRigidBodies();
-
-	//Step physics
-	system.updateWrapper(tempParams);
-
 	//Update the VBO
 	void* positionsPtr;
 	void* diffusePosPtr;
 	void* diffuseVelPtr;
-	cudaCheck(cudaGraphicsMapResources(3, render.resources));
+	void* velocitiesPtr;
+
+	cudaCheck(cudaGraphicsMapResources(4, render.resources));
 	size_t size;
 	cudaGraphicsResourceGetMappedPointer(&positionsPtr, &size, render.resources[0]);
 	cudaGraphicsResourceGetMappedPointer(&diffusePosPtr, &size, render.resources[1]);
 	cudaGraphicsResourceGetMappedPointer(&diffuseVelPtr, &size, render.resources[2]);
+	cudaGraphicsResourceGetMappedPointer(&velocitiesPtr, &size, render.resources[3]);
 	system.getPositions((float*)positionsPtr, tempParams.numParticles);
 	system.getDiffuse((float*)diffusePosPtr, (float*)diffuseVelPtr, tempParams.numDiffuse);
-	cudaGraphicsUnmapResources(3, render.resources, 0);
-
-	/*std::vector<float4> tmp(tempParams.numParticles);
-
-	cudaCheck(cudaMemcpy(tmp.data(), positionsPtr, tempParams.numParticles * sizeof(float4), cudaMemcpyDeviceToHost));*/
-
-	system.updateBoundaryForces(rigidBodies,tp, tempParams); 
+	system.getVelocities((float*)velocitiesPtr, tempParams.numParticles);
+	cudaGraphicsUnmapResources(4, render.resources, 0);
 	
-	START_TIMING("SimStep - PBD");
-	pbdWrapper.timeStep();
-	STOP_TIMING_AVG;
 
-	system.updateBoundaryParticles(rigidBodies,tp, tempParams);
+	if (running) {
+		PBDWrapper& pbdWrapper = scene.getPBDWrapper();
+		std::vector<PBD::RigidBody *> bodies = pbdWrapper.getSimulationModel().getRigidBodies();
+		//std::vector<Model*> models = scene.getModels();
+		std::vector<SPH::RigidBodyParticleObject*> rigidBodies = scene.getRigidBodies();
+
+		//Step physics
+		system.updateWrapper(tempParams);
+
+		std::vector<float3> tmp(tempParams.numParticles);
+
+		cudaCheck(cudaMemcpy(tmp.data(), velocitiesPtr, tempParams.numParticles * sizeof(float3), cudaMemcpyDeviceToHost));
+
+		system.updateBoundaryForces(rigidBodies, tp, tempParams);
+
+		START_TIMING("SimStep - PBD");
+		pbdWrapper.timeStep();
+		STOP_TIMING_AVG;
+
+		system.updateBoundaryParticles(rigidBodies, tp, tempParams);
+
+	}
 	//Render
 	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.numRigidParticles, tp.triangles, cam);
 }

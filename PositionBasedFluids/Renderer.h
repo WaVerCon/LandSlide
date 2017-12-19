@@ -16,7 +16,8 @@ public:
 	void initVBOS(int numParticles, int numDiffuse, std::vector<int> triangles);
 	void run(int numParticles, int numDiffuse, int numCloth, std::vector<int> triangles, Camera &cam);
 
-	cudaGraphicsResource *resources[3];
+	cudaGraphicsResource *resources[4];
+	GLuint velocityVBO;//增加速度的绘制
 	GLuint positionVBO;
 	GLuint indicesVBO;
 	GLuint diffusePosVBO;

@@ -14,6 +14,7 @@ static const int blockSize = 128;
 
 __constant__ solverParams sp;
 __constant__ float deltaT = 0.0083f;
+__constant__ float fluidMass = 0.1f;
 __device__ int foamCount = 0;
 __constant__ float distr[] =
 {
@@ -133,32 +134,33 @@ __device__ float3 xsphViscosity(float4* newPos, float3* velocities, int* phases,
 }
 
 __device__ void confineToBox(float4 &pos, float3 &vel) {
-	if (pos.x < 0) {
+	if (pos.x < sp.origin.x) {
 		vel.x = 0;
-		pos.x = 0.001f;
-	} else if (pos.x > sp.bounds.x) {
+		pos.x = sp.origin.x;
+	} else if (pos.x > sp.origin.x+sp.bounds.x) {
 		vel.x = 0;
-		pos.x = sp.bounds.x - 0.001f;
+		pos.x = sp.origin.x + sp.bounds.x - 0.001f;
 	}
 
-	if (pos.y < 0) {
+	if (pos.y < sp.origin.y) {
 		vel.y = 0;
-		pos.y = 0.001f;
-	} else if (pos.y > sp.bounds.y) {
+		pos.y = sp.origin.y;
+	} else if (pos.y > sp.origin.y+sp.bounds.y) {
 		vel.y = 0;
-		pos.y = sp.bounds.y - 0.001f;
+		pos.y = sp.origin.y + sp.bounds.y - 0.001f;
 	}
 
-	if (pos.z < 0) {
+	if (pos.z < sp.origin.z) {
 		vel.z = 0;
-		pos.z = 0.001f;
-	} else if (pos.z > sp.bounds.z) {
+		pos.z = sp.origin.z;
+	} else if (pos.z > sp.origin.z+sp.bounds.z) {
 		vel.z = 0;
-		pos.z = sp.bounds.z - 0.001f;
+		pos.z = sp.origin.z + sp.bounds.z - 0.001f;
 	}
 }
 
 __device__ int3 getGridPos(float4 pos) {
+	pos = make_float4(pos.x - sp.origin.x, pos.y - sp.origin.y, pos.z - sp.origin.z,pos.w);
 	return make_int3(int(pos.x / sp.radius) % sp.gridWidth, int(pos.y / sp.radius) % sp.gridHeight, int(pos.z / sp.radius) % sp.gridDepth);
 }
 
@@ -166,9 +168,9 @@ __device__ int getGridIndex(int3 pos) {
 	return (pos.z * sp.gridHeight * sp.gridWidth) + (pos.y * sp.gridWidth) + pos.x;
 }
 
-__global__ void predictPositions(float4* newPos, float3* velocities) {
+__global__ void predictPositions(float4* newPos, float3* velocities,int*phases) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= sp.numParticles) return;
+	if (index >= sp.numParticles||phases[index]!=0) return;
 
 	//update velocity vi = vi + dt * fExt
 	velocities[index] += ((newPos[index].w > 0) ? 1 : 0) * sp.gravity * deltaT;
@@ -530,6 +532,7 @@ __global__ void updateClothVelocity(float4* oldPos, float4* newPos, float3* velo
 	oldPos[index] = newPos[index];
 }
 
+
 struct OBCmp {
 	__host__ __device__
 	bool operator()(const float4& a, const float4& b) const {
@@ -551,7 +554,7 @@ void updateWater(solver* s, int numIterations) {
 		calcLambda<<<dims, blockSize>>>(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->densities,s->boundaryPsi, s->buffer0);
 
 		//calculate deltaP
-		calcDeltaP << <dims, blockSize >> >(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->deltaPs, s->buffer0, s->boundaryPsi, s->forces);
+		calcDeltaP <<<dims, blockSize >> >(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->deltaPs, s->buffer0, s->boundaryPsi, s->forces);
 
 		//update position x*i = x*i + deltaPi
 		applyDeltaP<<<dims, blockSize>>>(s->newPos, s->deltaPs, s->buffer0, 0);
@@ -580,7 +583,7 @@ void updateCloth(solver* s, int numIterations) {
 
 void update(solver* s, solverParams* sp) {
 	//Predict positions and update velocity
-	predictPositions<<<dims, blockSize>>>(s->newPos, s->velocities);
+	predictPositions<<<dims, blockSize>>>(s->newPos, s->velocities,s->phases);
 
 	//Update neighbors
 	clearNeighbors<<<dims, blockSize>>>(s->numNeighbors, s->numContacts);

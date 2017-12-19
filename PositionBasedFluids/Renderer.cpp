@@ -126,6 +126,13 @@ void Renderer::initVBOS(int numParticles, int numDiffuse, vector<int> triangles)
 
 	cudaGraphicsGLRegisterBuffer(&resources[2], diffuseVelVBO, cudaGraphicsRegisterFlagsWriteDiscard);
 
+	glGenBuffers(1, &velocityVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, velocityVBO);
+	glBufferData(GL_ARRAY_BUFFER,numParticles * 3 * sizeof(float), 0, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	cudaGraphicsGLRegisterBuffer(&resources[3], velocityVBO, cudaGraphicsRegisterFlagsWriteDiscard);
+
 	if (triangles.size() > 0){//triangles may be empty.
 		glGenBuffers(1, &indicesVBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesVBO);
@@ -167,7 +174,7 @@ void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> t
 	//renderSphere(projection, mView, cam, numParticles, numCloth);
 
 	//--------------------FLUID_PARTICLES------------------
-	renderSphere(projection, mView, cam, numParticles, numCloth);
+	renderSphere(projection, mView, cam, numParticles-numCloth, numCloth);
 
 	glUseProgram(quad.program);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -670,7 +677,7 @@ void Renderer::renderSphere(const glm::mat4 &projection, const glm::mat4 &mView,
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	setFloat(particle, (float)viewport[2], "viewport_width");
-	float particleRadius = radius*0.1f;
+	//float particleRadius = radius*0.1f;
 	setFloat(particle, radius, "radius");
 	setVec3(particle, glm::vec3(fluidColor[0], fluidColor[1], fluidColor[2]), "color");
 
@@ -688,6 +695,11 @@ void Renderer::renderSphere(const glm::mat4 &projection, const glm::mat4 &mView,
 
 
 	particle.bindPositionVAO(positionVBO, numCloth);
+	glBindVertexArray(particle.vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, velocityVBO);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(numCloth * sizeof(float3)));
+	glEnableVertexAttribArray(1);
 	//particle.bindPositionVAO(positionVBO, 0);
 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);

@@ -23,7 +23,7 @@ public:
 	void getDiffuse(float* diffusePosPtr, float* diffuseVelPtr, int numDiffuse);
 	void updateBoundaryForces(std::vector<SPH::RigidBodyParticleObject*> rigidBodies,tempSolver &tp, solverParams &tempParams);
 	void updateBoundaryParticles(std::vector<SPH::RigidBodyParticleObject*> rigidBodies,const tempSolver &tp, solverParams& tempParams);
-
+	void getVelocities(float* velocityPtr, int numParticles);
 private:
 	int getIndex(float i, float j);
 	float easeInOutQuad(float t, float b, float c, float d);

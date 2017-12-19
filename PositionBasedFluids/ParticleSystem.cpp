@@ -100,12 +100,15 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	if (tp.stiffness.size()>0)
 		cudaCheck(cudaMemcpy(s->stiffness, &tp.stiffness[0], tempParams.numConstraints * sizeof(int), cudaMemcpyHostToDevice));
 	setParams(&tempParams);
+
+	initBoundaryPsi(s, &tempParams);
 }
 void ParticleSystem::updateBoundaryParticles(std::vector<SPH::RigidBodyParticleObject*> rigidBodies, const tempSolver &tp, solverParams &params)//对刚体粒子的velocity，直接使用计算结果进行替代，而不累加
 {
 	const unsigned int nObjects = params.numRigidBody;
 	int pindex = 0;
 	cudaCheck(cudaMemcpy(s->rigidPosPinned, s->newPos, params.numRigidParticles*sizeof(float4), cudaMemcpyDeviceToHost));
+	cudaCheck(cudaMemcpy(s->rigidVelPinned, s->velocities, params.numRigidParticles * sizeof(float3), cudaMemcpyDeviceToHost));
 	for (unsigned int i = 0; i < nObjects; i++)
 	{
 		SPH::RigidBodyParticleObject* rbpo = rigidBodies[i];
@@ -186,6 +189,10 @@ void ParticleSystem::updateWrapper(solverParams &tempParams) {
 
 void ParticleSystem::getPositions(float* positionsPtr, int numParticles) {
 	cudaCheck(cudaMemcpy(positionsPtr, s->oldPos, numParticles * sizeof(float4), cudaMemcpyDeviceToDevice));
+}
+
+void ParticleSystem::getVelocities(float* velocityPtr, int numParticles) {
+	cudaCheck(cudaMemcpy(velocityPtr, s->velocities, numParticles * sizeof(float3), cudaMemcpyDeviceToDevice));
 }
 
 void ParticleSystem::getDiffuse(float* diffusePosPtr, float* diffuseVelPtr, int numDiffuse) {

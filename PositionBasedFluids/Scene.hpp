@@ -145,7 +145,9 @@ public:
 	
 	void init(tempSolver* tp, solverParams* sp) {
 		const float radius = 0.1f;
-		const float restDistance = radius * 0.5f;
+		//const float radius = 0.025f;
+		//const float restDistance = radius * 0.5f;
+		const float restDistance = radius;
 		/*float3 lower = make_float3(-0.5f,10.0f, -0.5f);
 		int3 dims = make_int3(10, 10, 10);*/
 		
@@ -165,11 +167,9 @@ public:
 		sp->numRigidParticles = tp->positions.size();
 		//createBodyModel();
 
-		float3 lower = make_float3(0.0f, 3.0f, 0.0f);
+		float3 lower = make_float3(0.5f, 2.0f, 0.5f);
 		int3 dims = make_int3(10, 10, 10);
 		createParticleGrid(tp, sp, lower, dims, restDistance);
-
-
 
 		sp->radius = radius;
 		sp->restDistance = restDistance;
@@ -179,7 +179,10 @@ public:
 		sp->numCloth = 0;
 		sp->numConstraints = 0;
 		sp->gravity = make_float3(0, -9.8f, 0);
-		sp->bounds = make_float3(dims) * radius;
+		sp->bounds = make_float3(dims.x * 10 * radius, dims.y * 10 * radius, dims.z * 10 * radius);
+		
+		sp->origin = make_float3(-sp->bounds.x / 2, 0, -sp->bounds.z / 2);
+
 		sp->gridWidth = int(sp->bounds.x / radius);
 		sp->gridHeight = int(sp->bounds.y / radius);
 		sp->gridDepth = int(sp->bounds.z / radius);
@@ -188,6 +191,8 @@ public:
 		sp->maxNeighbors = 50;
 		sp->maxParticles = 50;
 		sp->restDensity = 6378.0f;
+		//sp->restDensity = 1000.0f;
+
 		sp->lambdaEps = 600.0f;
 		sp->vorticityEps = 0.0001f;
 		sp->C = 0.01f; //0.0025f;

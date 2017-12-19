@@ -72,6 +72,8 @@ public:
 
 	float3 gravity;
 	float3 bounds;
+	float3 origin;
+
 
 	int numIterations;
 	float radius;
