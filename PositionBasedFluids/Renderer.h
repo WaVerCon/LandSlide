@@ -50,7 +50,7 @@ private:
 	//void renderObjects(glm::mat4 &projection, glm::mat4 &mView, std::vector<Model*>& models);
 
 	void renderRigidBodies(glm::mat4 &projection, glm::mat4 &mView);
-	void renderSphere(const glm::mat4 &projection, const glm::mat4 &mView, Camera &cam, int numParticles, int numCloth);
+	void renderSphere(const glm::mat4 &projection, const glm::mat4 &mView, Camera &cam, int numParticles, int numCloth,bool renderWall);
 	void initFramebuffers();
 	void setInt(Shader &shader, const int &x, const GLchar* name);
 	void setFloat(Shader &shader, const float &x, const GLchar* name);

@@ -141,8 +141,11 @@ void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam) {
 		system.running = false;
 
 	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
-		running = !running;
-		system.running = !system.running;
+		running = true;
+		system.running = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_CAPS_LOCK)) {
+		running = false;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
@@ -207,21 +210,25 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolve
 	system.getPositions((float*)positionsPtr, tempParams.numParticles);
 	system.getDiffuse((float*)diffusePosPtr, (float*)diffuseVelPtr, tempParams.numDiffuse);
 	system.getVelocities((float*)velocitiesPtr, tempParams.numParticles);
-	cudaGraphicsUnmapResources(4, render.resources, 0);
 	
+	/*vector<int> tmpNeighbor(tempParams.numParticles);
+	cudaCheck(cudaMemcpy(tmpNeighbor.data(), system.s->numNeighbors, tempParams.numParticles * sizeof(int), cudaMemcpyDeviceToHost));
+
+	vector<float> tmp(tempParams.numRigidParticles);
+	cudaCheck(cudaMemcpy(tmp.data(), system.s->boundaryPsi,tempParams.numRigidParticles * sizeof(float), cudaMemcpyDeviceToHost));
+	
+	vector<float4> tmp2(tempParams.numParticles);
+	cudaCheck(cudaMemcpy(tmp2.data(), system.s->newPos, tempParams.numParticles * sizeof(float4), cudaMemcpyDeviceToHost));*/
 
 	if (running) {
+
 		PBDWrapper& pbdWrapper = scene.getPBDWrapper();
-		std::vector<PBD::RigidBody *> bodies = pbdWrapper.getSimulationModel().getRigidBodies();
+		//std::vector<PBD::RigidBody *> bodies = pbdWrapper.getSimulationModel().getRigidBodies();
 		//std::vector<Model*> models = scene.getModels();
 		std::vector<SPH::RigidBodyParticleObject*> rigidBodies = scene.getRigidBodies();
 
 		//Step physics
 		system.updateWrapper(tempParams);
-
-		std::vector<float3> tmp(tempParams.numParticles);
-
-		cudaCheck(cudaMemcpy(tmp.data(), velocitiesPtr, tempParams.numParticles * sizeof(float3), cudaMemcpyDeviceToHost));
 
 		system.updateBoundaryForces(rigidBodies, tp, tempParams);
 
@@ -230,8 +237,12 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolve
 		STOP_TIMING_AVG;
 
 		system.updateBoundaryParticles(rigidBodies, tp, tempParams);
+		system.getPositions((float*)positionsPtr, tempParams.numParticles);
+		system.getDiffuse((float*)diffusePosPtr, (float*)diffuseVelPtr, tempParams.numDiffuse);
+		system.getVelocities((float*)velocitiesPtr, tempParams.numParticles);
 
 	}
 	//Render
 	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.numRigidParticles, tp.triangles, cam);
+	cudaGraphicsUnmapResources(4, render.resources, 0);
 }

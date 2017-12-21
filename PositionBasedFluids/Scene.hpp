@@ -146,8 +146,8 @@ public:
 	void init(tempSolver* tp, solverParams* sp) {
 		const float radius = 0.1f;
 		//const float radius = 0.025f;
-		//const float restDistance = radius * 0.5f;
-		const float restDistance = radius;
+		const float restDistance = radius * 0.5f;
+		//const float restDistance = radius;
 		/*float3 lower = make_float3(-0.5f,10.0f, -0.5f);
 		int3 dims = make_int3(10, 10, 10);*/
 		
@@ -161,7 +161,7 @@ public:
 		pbdWrapper.readScene(scene_file,rigidBodyFiles);
 		pbdWrapper.initModel(TimeManager::getCurrent()->getTimeStepSize());
 		
-		initRigidBodies(pbdWrapper, tp, sp, rigidBodyFiles, Vector3r::Zero(), Matrix3r::Identity(),1.0,radius);
+		initRigidBodies(pbdWrapper, tp, sp, rigidBodyFiles, Vector3r::Zero(), Matrix3r::Identity(),1.0,radius*0.5);
 
 
 		sp->numRigidParticles = tp->positions.size();

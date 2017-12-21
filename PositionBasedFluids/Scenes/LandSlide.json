@@ -34,7 +34,7 @@
       "id": 1,
       "density": 100,
       "geometryFile": "../Resources/Models/cube.obj",
-      "translation": [ -0.5,1.5, 1 ],
+      "translation": [ -0.5,2.0, 1 ],
       "rotationAxis": [ 1, 0, 0 ],
       "rotationAngle": 0,
       "scale": [ 1, 1, 1 ],

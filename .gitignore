@@ -193,3 +193,6 @@ ModelManifest.xml
 *.VC.db
 *.bgeo
 Cache/
+*.sln
+*.vcxproj
+*.vcxproj.*

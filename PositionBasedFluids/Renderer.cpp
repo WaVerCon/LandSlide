@@ -171,10 +171,10 @@ void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> t
 	renderRigidBodies(projection, mView);
 
 	//--------------------RIGIDBODY_PARTICLES-----------------
-	//renderSphere(projection, mView, cam, numParticles, numCloth);
+	renderSphere(projection, mView, cam, numParticles, numCloth,true);
 
 	//--------------------FLUID_PARTICLES------------------
-	renderSphere(projection, mView, cam, numParticles-numCloth, numCloth);
+	renderSphere(projection, mView, cam, numParticles-numCloth, numCloth,false);
 
 	glUseProgram(quad.program);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -659,16 +659,16 @@ void Renderer::renderRigidBodies(glm::mat4 &projection, glm::mat4 &mView) {
 		glBindVertexArray(0);
 	}	
 }
-void Renderer::renderSphere(const glm::mat4 &projection, const glm::mat4 &mView, Camera &cam, int numParticles, int numCloth){
+void Renderer::renderSphere(const glm::mat4 &projection, const glm::mat4 &mView, Camera &cam, int numParticles, int numCloth,bool renderWall){
 	
 	float fluidColor[4] = { 0.3f, 0.5f, 0.9f, 1.0f };
-	//float surfaceColor[4] = { 0.2f, 0.6f, 0.8f, 1 };
-	//float speccolor[4] = { 1.0, 1.0, 1.0, 1.0 };
-	//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, surfaceColor);
-	//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, surfaceColor);
-	//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, speccolor);
-	//glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 100.0);
-	//glColor3fv(surfaceColor);
+	float surfaceColor[4] = { 0.2f, 0.6f, 0.8f, 1 };
+	float speccolor[4] = { 1.0, 1.0, 1.0, 1.0 };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, surfaceColor);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, surfaceColor);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, speccolor);
+	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 100.0);
+	glColor3fv(surfaceColor);
 
 	
 	glUseProgram(particle.program);
@@ -677,8 +677,9 @@ void Renderer::renderSphere(const glm::mat4 &projection, const glm::mat4 &mView,
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	setFloat(particle, (float)viewport[2], "viewport_width");
-	//float particleRadius = radius*0.1f;
-	setFloat(particle, radius, "radius");
+	float particleRadius = radius*0.5f;
+	setFloat(particle, particleRadius, "radius");
+	setFloat(particle, 25.0, "max_velocity");
 	setVec3(particle, glm::vec3(fluidColor[0], fluidColor[1], fluidColor[2]), "color");
 
 
@@ -694,15 +695,15 @@ void Renderer::renderSphere(const glm::mat4 &projection, const glm::mat4 &mView,
 	//glClear(GL_DEPTH_BUFFER_BIT);
 
 
-	particle.bindPositionVAO(positionVBO, numCloth);
+	particle.bindPositionVAO(positionVBO, renderWall?0:numCloth);
 	glBindVertexArray(particle.vao);
 
 	glBindBuffer(GL_ARRAY_BUFFER, velocityVBO);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(numCloth * sizeof(float3)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(renderWall?0:numCloth * sizeof(float3)));
 	glEnableVertexAttribArray(1);
 	//particle.bindPositionVAO(positionVBO, 0);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
+	glDrawArrays(GL_POINTS, 0,renderWall? numCloth:numParticles);
 	//glDrawArrays(GL_POINTS, 0, numCloth);
 	
 	glBindVertexArray(0);

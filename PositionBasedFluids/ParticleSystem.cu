@@ -248,7 +248,7 @@ __global__ void computeBoundaryPsi(float4* newPos, float* boundaryPsi, int* phas
 	for (int i = 0; i < numNeighbors[index]; ++i){
 		int nindex = index*sp.maxNeighbors + i;
 		if (phases[neighbors[nindex]] == phases[index]){
-			delta += WPoly6(make_float3(newPos[index]), make_float3(newPos[nindex]));
+			delta += WPoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[nindex]]));
 		}
 	}
 	float volume = 1.0 / delta;
@@ -541,6 +541,11 @@ struct OBCmp {
 };
 
 void initBoundaryPsi(solver *s, solverParams *sp){
+	//Update neighbors
+	clearNeighbors << <dims, blockSize >> >(s->numNeighbors, s->numContacts);
+	clearGrid <<<gridDims, blockSize >> >(s->gridCounters);
+	updateGrid <<<dims, blockSize >> >(s->newPos, s->gridCells, s->gridCounters);
+	updateNeighbors << <dims, blockSize >> >(s->newPos, s->phases, s->gridCells, s->gridCounters, s->neighbors, s->numNeighbors, s->contacts, s->numContacts);
 	computeBoundaryPsi <<<rigidParticleDims, blockSize >>>(s->newPos,s->boundaryPsi, s->phases, s->neighbors, s->numNeighbors);
 }
 

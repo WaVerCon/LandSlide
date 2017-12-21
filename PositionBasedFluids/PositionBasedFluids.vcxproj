@@ -75,8 +75,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\Administrator\Documents\Visual Studio 2013\Projects\OpenGLLibs\includes;C:\Users\Administrator\Documents\Visual Studio 2013\Projects\DevIL Windows SDK\include;C:\LandSlide\PositionBasedDynamics\include;C:\LandSlide\extern\freeglut\include;C:\LandSlide\extern\eigen;C:\LandSlide\extern;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Administrator\Documents\Visual Studio 2013\Projects\DevIL Windows SDK\lib\x86\Release;C:\LandSlide\lib\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Users\Yihan Wu\Documents\Visual Studio 2015\Projects\OpenGLLibs\includes;C:\LandSlide\PositionBasedDynamics\include;C:\LandSlide\extern\freeglut\include;C:\LandSlide\extern\eigen;C:\LandSlide\extern;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\LandSlide\lib\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -109,14 +109,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\OpenGL\SOIL\src;C:\OpenGL\devil\include;C:\OpenGL\GLEW\include;C:\OpenGL\GLM;C:\OpenGL\GLFW\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\OpenGL\GLEW\lib\Release\x64;C:\OpenGL\GLFW\lib-msvc120;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32s.lib;DevIL.lib;ILU.lib;ILUT.lib;cudart.lib;assimpd.lib;SOIL.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;PositionBasedDynamics_d.lib;Simulation_d.lib;Utils_d.lib;partio_d.lib;zlib_d.lib;freeglut_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32s.lib;cudart.lib;assimpd.lib;SOIL.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;PositionBasedDynamics_d.lib;Simulation_d.lib;Utils_d.lib;partio_d.lib;zlib_d.lib;freeglut_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/VERBOSE %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <CudaCompile>
