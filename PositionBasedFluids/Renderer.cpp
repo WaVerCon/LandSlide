@@ -171,7 +171,7 @@ void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> t
 	renderRigidBodies(projection, mView);
 
 	//--------------------RIGIDBODY_PARTICLES-----------------
-	renderSphere(projection, mView, cam, numParticles, numCloth,true);
+	//renderSphere(projection, mView, cam, numParticles, numCloth,true);
 
 	//--------------------FLUID_PARTICLES------------------
 	renderSphere(projection, mView, cam, numParticles-numCloth, numCloth,false);
